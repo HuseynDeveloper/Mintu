@@ -1,0 +1,449 @@
+/* Mintu Dynamic Island & Core Layout */
+:root {
+  --island-bg: #000000;
+  --island-rim: rgba(255, 255, 255, 0.14);
+  --island-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --island-shadow: 0 14px 38px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  font-family: var(--font-sans);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Island Container positioned at top-center of window */
+.island-viewport {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.mintu-island {
+  position: relative;
+  background: var(--island-bg);
+  border: 1px solid var(--island-rim);
+  box-shadow: var(--island-shadow), var(--island-inner-glow);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: box-shadow 0.25s ease;
+  will-change: width, height, border-radius;
+}
+
+.mintu-island:hover {
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Content Container */
+.island-content-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Slot Layouts & Cross-fade */
+.island-slot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 16px 0 12px;
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island-slot.active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.island-slot.fade-out {
+  opacity: 0;
+  transform: scale(0.94);
+  pointer-events: none;
+}
+
+/* Left anchor for pet in island */
+.slot-left-pet-anchor {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Slot 1: Collapsed */
+.slot-collapsed {
+  justify-content: space-between;
+  padding: 0 14px 0 10px;
+}
+
+.collapsed-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981, 0 0 2px #34D399;
+  animation: pulse-dot 2.5s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* Slot 2: Idle */
+.slot-idle {
+  justify-content: space-between;
+  padding: 0 18px 0 12px;
+}
+
+.idle-clock {
+  color: #888888;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+/* Slot 3: Notification */
+.slot-notification {
+  padding: 0 16px 0 12px;
+}
+
+.notif-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.notif-app-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-text-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.25;
+}
+
+.notif-title {
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.notif-subtitle {
+  color: #9ca3af;
+  font-size: 11.5px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.notif-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6b7280;
+  margin-left: auto;
+}
+
+/* Notification actions row (Image D layout variant) */
+.notif-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  padding-right: 4px;
+}
+
+.notif-btn {
+  border: none;
+  outline: none;
+  padding: 6px 14px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.notif-btn:active {
+  transform: scale(0.94);
+}
+
+.notif-btn.primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.notif-btn.secondary {
+  background: #262626;
+  color: #e5e7eb;
+}
+
+/* Slot 4: Expanded (AI Chat Shell) */
+.slot-expanded {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 20px 22px;
+}
+
+.expanded-top-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.expanded-pet {
+  width: 64px;
+  height: 64px;
+}
+
+.expanded-greeting {
+  flex: 1;
+}
+
+.greeting-heading {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+}
+
+.expanded-input-row {
+  margin: 14px 0 10px 0;
+}
+
+.chat-input-pill {
+  position: relative;
+  background: #1c1c1e;
+  border: 1px solid #2c2c2e;
+  border-radius: 20px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+}
+
+.chat-text-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e5e7eb;
+  font-size: 13.5px;
+  font-family: inherit;
+}
+
+.chat-text-input::placeholder {
+  color: #636366;
+}
+
+.ai-milestone-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 3px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.expanded-chips-row {
+  display: flex;
+  gap: 8px;
+}
+
+.chip-btn {
+  background: #2c2c2e;
+  border: 1px solid #3a3a3c;
+  border-radius: 16px;
+  padding: 6px 14px;
+  color: #d1d5db;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.chip-btn:hover {
+  background: #3a3a3c;
+  color: #ffffff;
+}
+
+.chip-btn:active {
+  transform: scale(0.95);
+}
+
+/* Slot 5: Timer */
+.slot-timer {
+  justify-content: space-between;
+  padding: 0 20px 0 14px;
+}
+
+.timer-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.circular-progress {
+  width: 28px;
+  height: 28px;
+}
+
+.circular-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.circle-bg {
+  fill: none;
+  stroke: #1f2937;
+  stroke-width: 3.8;
+}
+
+.circle {
+  fill: none;
+  stroke: #10B981;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.timer-digits {
+  color: #ffffff;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Slot 6: Music */
+.slot-music {
+  justify-content: space-between;
+  padding: 0 16px 0 12px;
+}
+
+.music-art-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  overflow: hidden;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.music-art-gradient {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #8b5cf6 100%);
+}
+
+.music-info-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  margin-left: 10px;
+}
+
+.music-track-title {
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.music-waveform {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 16px;
+}
+
+.wave-bar {
+  width: 2.5px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+.music-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.music-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e5e7eb;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.music-btn:hover {
+  opacity: 0.8;
+}
+
+.music-btn:active {
+  transform: scale(0.88);
+}

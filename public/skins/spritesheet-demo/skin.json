@@ -1,0 +1,26 @@
+{
+  "id": "spritesheet-demo",
+  "name": "Pixel Mintu (Spritesheet Demo)",
+  "author": "Mintu Team",
+  "version": "1.0.0",
+  "type": "spritesheet",
+  "colors": {
+    "petBody": "#8FE0C8",
+    "petBelly": "#FFF6E8",
+    "petOutline": "#1E2923"
+  },
+  "spritesheet": {
+    "frameWidth": 64,
+    "frameHeight": 64,
+    "states": {
+      "idle": { "x": 0, "y": 0, "frames": 4 },
+      "walk": { "x": 0, "y": 64, "frames": 4 },
+      "sleep": { "x": 0, "y": 128, "frames": 2 },
+      "happy": { "x": 0, "y": 192, "frames": 4 },
+      "think": { "x": 0, "y": 256, "frames": 2 },
+      "talk": { "x": 0, "y": 320, "frames": 3 },
+      "alert": { "x": 0, "y": 384, "frames": 2 },
+      "curious": { "x": 0, "y": 448, "frames": 2 }
+    }
+  }
+}
