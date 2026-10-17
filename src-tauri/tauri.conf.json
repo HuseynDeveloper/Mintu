@@ -1,11 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "mintu",
+  "productName": "Mintu",
   "version": "0.1.0",
   "identifier": "com.mintu.desktop",
   "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
@@ -13,31 +11,17 @@
     "windows": [
       {
         "label": "main",
-        "title": "Mintu Island",
+        "title": "Mintu",
         "url": "index.html",
-        "width": 520,
-        "height": 380,
-        "resizable": false,
+        "width": 1920,
+        "height": 1080,
+        "resizable": true,
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,
-        "skipTaskbar": true,
+        "skipTaskbar": false,
         "shadow": false,
         "visible": true
-      },
-      {
-        "label": "free",
-        "title": "Mintu Pet",
-        "url": "free.html",
-        "width": 1200,
-        "height": 260,
-        "resizable": false,
-        "transparent": true,
-        "decorations": false,
-        "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "shadow": false,
-        "visible": false
       }
     ],
     "security": {
@@ -47,6 +31,12 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "shortDescription": "Cute animated mint-green living desktop companion",
+    "longDescription": "Mintu is an animated desktop companion living in a Dynamic Island with Free mode, local AI chat, SMTC media control, notifications, and context awareness.",
+    "copyright": "Copyright 2026 Mintu Contributors (MIT)",
+    "resources": [
+      "binaries/**/*"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

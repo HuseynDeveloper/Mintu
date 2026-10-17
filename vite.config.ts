@@ -16,7 +16,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, "index.html"),
-        free: resolve(import.meta.dirname, "free.html")
+        free: resolve(import.meta.dirname, "free.html"),
+        capture: resolve(import.meta.dirname, "capture.html")
       }
     }
   }

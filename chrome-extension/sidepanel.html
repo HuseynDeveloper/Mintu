@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mintu Living Companion</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <!-- Top Island Header -->
+  <div class="header-container">
+    <div class="island-bar">
+      <div class="island-left">
+        <div class="pet-avatar" id="header-pet" title="Mintu">
+          <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+            <g id="pet-body">
+              <path d="M 80,44 C 108,44 126,62 126,92 C 126,122 110,140 80,140 C 50,140 34,122 34,92 C 34,62 52,44 80,44 Z"
+                    fill="#9ae6b4" stroke="#22543d" stroke-width="4" />
+              <!-- Belly -->
+              <ellipse cx="80" cy="108" rx="28" ry="24" fill="#fef3c7" />
+              <!-- Ears -->
+              <path d="M 46,54 C 36,36 46,26 56,38 Z" fill="#9ae6b4" stroke="#22543d" stroke-width="3.5" />
+              <path d="M 114,54 C 124,36 114,26 104,38 Z" fill="#9ae6b4" stroke="#22543d" stroke-width="3.5" />
+              <!-- Eyes -->
+              <g id="eye-left"><circle cx="64" cy="80" r="5" fill="#1e293b" /><circle cx="66" cy="78" r="1.8" fill="#ffffff" /></g>
+              <g id="eye-right"><circle cx="96" cy="80" r="5" fill="#1e293b" /><circle cx="98" cy="78" r="1.8" fill="#ffffff" /></g>
+              <!-- Cheeks -->
+              <ellipse cx="52" cy="88" rx="5" ry="3" fill="#fca5a5" opacity="0.75" />
+              <ellipse cx="108" cy="88" rx="5" ry="3" fill="#fca5a5" opacity="0.75" />
+              <!-- Mouth -->
+              <path id="pet-mouth" d="M 74,88 Q 80,94 86,88" fill="none" stroke="#22543d" stroke-width="2.5" stroke-linecap="round" />
+            </g>
+          </svg>
+        </div>
+        <div class="pet-info">
+          <div class="pet-name">Mintu <span class="pet-badge">Web</span></div>
+          <div class="pet-status" id="pet-status-text">Status: Hazırdır</div>
+        </div>
+      </div>
+      <div class="island-actions">
+        <button class="icon-btn" id="btn-toggle-float" title="Səhifə üzərində köməkçi">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btn-open-settings" title="Parametrlər">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick action chips without emojis -->
+    <div class="quick-actions">
+      <div class="chip" id="chip-summarize">Səhifəni Xülasələndir</div>
+      <div class="chip" id="chip-keypoints">Əsas Məqamlar</div>
+      <div class="chip" id="chip-translate">Azərbaycan dilinə Tərcümə</div>
+      <div class="chip" id="chip-clear">Söhbəti Təmizlə</div>
+    </div>
+  </div>
+
+  <!-- Messages Scroll Area -->
+  <div class="chat-messages" id="messages-container">
+    <div class="message-row assistant">
+      <div class="message-sender-tag">Mintu</div>
+      <div class="bubble">
+        Salam! Mən Mintu. Google Chrome-da köməkçinizəm.<br><br>
+        Açdığınız səhifəni xülasələndirə, mətni tərcümə edə, kod yazmağa kömək edə və ya suallarınızı cavablandıra bilərəm.
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Bar -->
+  <div class="input-container">
+    <div class="input-box">
+      <input type="text" class="chat-input" id="user-input" placeholder="Mintu-ya sualınızı yazın və ya səhifə haqqında soruşun..." />
+      <button class="send-btn" id="btn-send" title="Göndər">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="19" x2="12" y2="5"></line>
+          <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings Panel Modal without Emojis -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      <div class="settings-title">Mintu AI Parametrləri</div>
+      <button class="icon-btn" id="btn-close-settings" title="Bağla">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">Süni İntellekt Provayderi</label>
+      <select class="setting-input" id="setting-provider">
+        <option value="gemini">Google Gemini</option>
+        <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+        <option value="deepseek">DeepSeek (DeepSeek-Chat)</option>
+        <option value="custom">Fərdi (Custom / Ollama / Groq / OpenRouter)</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">Provayder API Açarı (API Key)</label>
+      <input type="password" class="setting-input" id="setting-api-key" placeholder="API açarını daxil edin (məs. AIza...)" />
+      <span class="setting-hint">Brauzerinizin yerli yaddaşında təhlükəsiz saxlanılır.</span>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">Model Adı / Kodu (Model ID)</label>
+      <input type="text" class="setting-input" id="setting-model" placeholder="məs. gemini-2.5-flash və ya gpt-4o" />
+      <span class="setting-hint">Gemini üçün standart: gemini-2.5-flash. İstədiyiniz modeli yaza bilərsiniz.</span>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">API Endpoint Linki (Base URL)</label>
+      <input type="text" class="setting-input" id="setting-base-url" placeholder="məs. https://generativelanguage.googleapis.com/v1beta" />
+      <span class="setting-hint">Standart: https://generativelanguage.googleapis.com/v1beta</span>
+    </div>
+
+    <button class="btn-primary" id="btn-save-settings">Yadda Saxla</button>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

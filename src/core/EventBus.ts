@@ -23,11 +23,36 @@ export type MintuEventMap = {
   };
   "island:notification-action": { actionId: string };
   "island:content-change": { slot: string };
+  "island:request-state": string;
+
+  // Context & Media simulation events
+  "context:set-summary": { summary: string; appName?: string; type?: string; actions?: Array<{ id: string; label: string; primary?: boolean }> };
+  "context:attach-chip": { id?: string; type: "code" | "image"; label: string; data: string; appName?: string };
+  "media:simulate-state": any;
 
   // App mode & system events
   "app:mode-change": { mode: "island" | "free" };
   "app:request-mode": { mode: "island" | "free" };
+  "app:toggle-mode": Record<string, any>;
   "debug:toggle": { open?: boolean };
+
+  // Settings events
+  "settings:outside-behavior-changed": string;
+  "settings:dev-panel-changed": boolean;
+  "settings:walk-windows-changed": boolean;
+  "settings:window-ignore-list-changed": string[];
+
+  // Tool events
+  "island:tool_approval_opened": any;
+  "island:tool_approval_closed": { id: string };
+  "island:tool_approval_dismissed": Record<string, any>;
+
+  // Milestone 5: Chat, Media, and Model events
+  "chat:messages-changed": any[];
+  "chat:conversations-changed": any[];
+  "chat:stream-delta": { delta: string; fullContent: string; convId: string };
+  "media-state-changed": any;
+  "model-download-progress": any;
 };
 
 type EventHandler<T> = (data: T) => void;

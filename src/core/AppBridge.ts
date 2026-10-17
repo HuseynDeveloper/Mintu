@@ -1,8 +1,5 @@
-/**
- * Tauri IPC App Bridge
- * Bridges frontend events and commands to Tauri 2 Rust backend
- * with safe fallback when running in a normal web browser.
- */
+import { invoke } from "@tauri-apps/api/core";
+import { listen, emit } from "@tauri-apps/api/event";
 
 export interface HitRect {
   x: number;
@@ -21,56 +18,44 @@ export interface ScreenWorkArea {
 
 class AppBridge {
   private isTauriApp: boolean = false;
-  private tauriCore: any = null;
-  private tauriEvent: any = null;
 
   constructor() {
-    this.init();
-  }
-
-  private async init() {
-    if (typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)) {
-      try {
-        this.tauriCore = await import("@tauri-apps/api/core");
-        this.tauriEvent = await import("@tauri-apps/api/event");
-        this.isTauriApp = true;
-      } catch (e) {
-        console.warn("[AppBridge] Tauri API failed to import, running in web fallback mode", e);
-      }
-    }
+    this.isTauriApp = typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
   }
 
   get isTauri(): boolean {
-    return this.isTauriApp;
+    return this.isTauriApp || (typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window));
+  }
+
+  async invoke(cmd: string, args?: any): Promise<any> {
+    try {
+      return await invoke(cmd, args);
+    } catch (e) {
+      console.warn(`[AppBridge] invoke ${cmd} error:`, e);
+      return null;
+    }
   }
 
   async setHitRegions(windowLabel: string, regions: HitRect[]): Promise<void> {
-    if (!this.isTauriApp || !this.tauriCore) return;
     try {
-      await this.tauriCore.invoke("set_hit_regions", {
-        windowLabel,
-        regions,
-      });
-    } catch (e) {
-      console.warn("[AppBridge] set_hit_regions error:", e);
+      await invoke("set_hit_regions", { windowLabel, regions });
+    } catch {
+      // ignore outside tauri
     }
   }
 
   async setAppMode(mode: "island" | "free"): Promise<void> {
-    if (!this.isTauriApp || !this.tauriCore) {
-      // In browser mode, simply dispatch custom event
-      window.dispatchEvent(new CustomEvent("mintu-mode-changed", { detail: mode }));
-      return;
-    }
     try {
-      await this.tauriCore.invoke("set_app_mode", { mode });
-    } catch (e) {
-      console.warn("[AppBridge] set_app_mode error:", e);
+      await invoke("set_app_mode", { mode });
+    } catch {
+      window.dispatchEvent(new CustomEvent("mintu-mode-changed", { detail: mode }));
     }
   }
 
   async getWorkArea(): Promise<ScreenWorkArea | null> {
-    if (!this.isTauriApp || !this.tauriCore) {
+    try {
+      return await invoke("get_work_area");
+    } catch {
       return {
         x: 0,
         y: 0,
@@ -79,44 +64,125 @@ class AppBridge {
         scale_factor: window.devicePixelRatio || 1,
       };
     }
+  }
+
+  async listenToEvent<T>(event: string, handler: (payload: T) => void): Promise<() => void> {
     try {
-      return await this.tauriCore.invoke("get_work_area");
-    } catch (e) {
-      console.warn("[AppBridge] getWorkArea error:", e);
+      return await listen(event, (ev: any) => handler(ev.payload));
+    } catch {
+      const browserListener = (e: Event) => {
+        handler((e as CustomEvent).detail);
+      };
+      window.addEventListener(`tauri-${event}`, browserListener);
+      return () => window.removeEventListener(`tauri-${event}`, browserListener);
+    }
+  }
+
+  async broadcastEvent(event: string, payload: unknown): Promise<void> {
+    try {
+      await emit(event, payload);
+    } catch {
+      window.dispatchEvent(new CustomEvent(`tauri-${event}`, { detail: payload }));
+    }
+  }
+
+  async getActiveWindowInfo(): Promise<{ title: string; process_name: string; is_blocked: boolean } | null> {
+    try {
+      return await invoke("get_active_window");
+    } catch {
       return null;
     }
   }
 
-  async listenToEvent<T>(event: string, handler: (payload: T) => void): Promise<() => void> {
-    if (this.isTauriApp && this.tauriEvent) {
-      const unlisten = await this.tauriEvent.listen(event, (ev: any) => {
-        handler(ev.payload);
-      });
-      return unlisten;
+  async captureContext(): Promise<{ text: string | null; image_base64: string | null; app_info: { title: string; process_name: string; is_blocked: boolean } } | null> {
+    try {
+      return await invoke("capture_context");
+    } catch {
+      return null;
     }
-    // Browser fallback
-    const browserListener = (e: Event) => {
-      const custom = e as CustomEvent;
-      handler(custom.detail);
-    };
-    window.addEventListener(`tauri-${event}`, browserListener);
-    return () => window.removeEventListener(`tauri-${event}`, browserListener);
   }
 
-  async broadcastEvent(event: string, payload: unknown): Promise<void> {
-    if (this.isTauriApp && this.tauriCore) {
-      try {
-        await this.tauriCore.invoke("emit_bus_event", {
-          event,
-          payload: typeof payload === "string" ? payload : JSON.stringify(payload),
-        });
-      } catch (e) {
-        console.warn("[AppBridge] broadcastEvent error:", e);
-      }
-    } else {
-      window.dispatchEvent(new CustomEvent(`tauri-${event}`, { detail: payload }));
+  async setPrivacyBlocklist(blocklist: string[]): Promise<void> {
+    try {
+      await invoke("set_privacy_blocklist", { blocklist });
+    } catch (e) {
+      console.warn("[AppBridge] setPrivacyBlocklist error:", e);
     }
   }
+
+  async openRegionCapture(): Promise<void> {
+    try {
+      await invoke("open_region_capture");
+    } catch {
+      window.dispatchEvent(new CustomEvent("open-mock-region-capture"));
+    }
+  }
+
+  async focusMainWindow(): Promise<void> {
+    try {
+      await invoke("focus_main_window");
+    } catch {}
+  }
+
+  async mediaGetState(): Promise<any> {
+    try {
+      return await invoke("media_get_state");
+    } catch {
+      return null;
+    }
+  }
+
+  async mediaTogglePlayPause(): Promise<boolean> {
+    try {
+      return await invoke("media_toggle_play_pause");
+    } catch {
+      return false;
+    }
+  }
+
+  async mediaNext(): Promise<boolean> {
+    try {
+      return await invoke("media_next");
+    } catch {
+      return false;
+    }
+  }
+
+  async mediaPrevious(): Promise<boolean> {
+    try {
+      return await invoke("media_previous");
+    } catch {
+      return false;
+    }
+  }
+
+  async focusAppWindow(appName: string): Promise<void> {
+    await invoke("focus_app_window", { appName });
+  }
+
+  async getWalkableWindows(): Promise<WalkableWindow[]> {
+    try {
+      return await invoke("get_walkable_windows");
+    } catch {
+      return [];
+    }
+  }
+
+  async setWindowIgnoreList(list: string[]): Promise<void> {
+    try {
+      await invoke("set_window_ignore_list", { list });
+    } catch {}
+  }
+}
+
+export interface WalkableWindow {
+  hwnd: number;
+  title: string;
+  process_name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export const appBridge = new AppBridge();

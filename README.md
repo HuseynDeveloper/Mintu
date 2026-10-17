@@ -1,10 +1,10 @@
 # Mintu (みんと) 🍃
 
-> A living desktop companion with a Dynamic Island, built with Tauri 2, Rust, Vite & TypeScript.
+> A living desktop companion with a Dynamic Island, local AI, and ambient context awareness, built with Tauri 2, Rust, Vite & TypeScript.
 
-Mintu is a cute, animated mint-green companion that lives inside a floating Dynamic Island widget at the top of your screen, can leave the island to roam freely on your desktop (Free mode), and in future milestones expands into a context-aware local AI assistant.
+Mintu is a cute, animated mint-green companion that lives inside a floating Dynamic Island widget at the top of your screen, can leave the island to roam freely on your desktop (Free mode), and functions as a context-aware local AI assistant powered by offline models (`llama.cpp`), real-time screen/text capture, and Windows Media OCR.
 
-**Animation quality, micro-expressions, and liquid "aliveness" are the #1 priority of the project.**
+**Animation quality, micro-expressions, privacy, and liquid "aliveness" are the #1 priorities of the project.**
 
 ---
 
@@ -12,60 +12,208 @@ Mintu is a cute, animated mint-green companion that lives inside a floating Dyna
 
 ```
 Mintu Architecture
-├── Dynamic Island Window (Top-Center: 520x380)
-│   ├── Apple-style liquid spring morphing (width, height, radius)
-│   ├── Responsive slot rendering (Collapsed, Idle, Notification, AI Chat, Timer, Music)
-│   └── Compact peeking PetRenderer (crisp at 32-48px)
+├── Unified Click-Through Screen Overlay Window
+│   ├── Single transparent coordinate space across the entire primary monitor
+│   ├── Dynamic Island (Apple-style spring morphing: width, height, corner radius)
+│   ├── Desktop Pet Layer with Kinematic Physics (gravity, fling momentum, ground bounce)
+│   ├── Pet Location State Machine: inIsland -> leaving -> free -> dragging -> approaching -> entering -> inIsland
+│   ├── 120px Magnetic Proximity Docking with soft mint glow & throw physics
+│   ├── Free desktop speech bubbles & interactive cards
+│   └── High-precision Win32 cursor poller (30Hz) with dynamic DOM hit-rect synchronization (<2% idle CPU)
 │
-├── Free Desktop Roaming Window (Bottom Screen: Full Width x 260px)
-│   ├── Kinematic Physics Body (gravity, fling momentum, ground bounce)
-│   ├── Squash & Stretch landing impact recovery
-│   └── White speech bubble with auto-dismiss (Image C)
+├── Local AI Engine (llama.cpp Sidecar & Model Manager)
+│   ├── Bundled or managed llama-server with automatic hardware tier detection (RAM, VRAM, CPU cores, disk space)
+│   ├── Resumable HTTP Range chunk downloader with SHA-256 hash validation & EMA speed/ETA telemetry
+│   ├── Token streaming pipeline with realtime markdown rendering, syntax-highlighted code blocks, and copy buttons
+│   ├── Pet micro-expression synchronization during generation (thinking, talking, happy, alert)
+│   └── Local SQLite database for conversation history and markdown transcript exports
 │
-├── Layered SVG Animation Engine (Image A Reference)
-│   ├── 15 distinct state poses (idle, walk, sleep, wake, think, talk, happy, curious, alert...)
-│   ├── Blended state transitions (cross-fading pose parameters, no hard cuts)
-│   ├── Spring follow-through physics for floppy ears and curly tail
-│   └── Layered micro-animations (breathing, blinks, double-blinks, ear twitches, eye saccades)
+├── Context & Ambient Awareness Engine
+│   ├── Global Hotkeys:
+│   │   ├── Ctrl+Alt+Space: Ingest selected text / active app context
+│   │   ├── Ctrl+Alt+S: Interactive screen-region capture with offline Windows Media OCR
+│   │   ├── Ctrl+Alt+M: Instant mode switch between Island and Free desktop roaming
+│   │   └── Ctrl+Shift+D: Hidden developer debug matrix (no permanent screen hints)
+│   ├── Privacy Guardian:
+│   │   ├── Automatic active foreground window inspection (GetForegroundWindow + QueryFullProcessImageNameW)
+│   │   ├── Hardened blocklist for credential & password managers (1Password, Bitwarden, KeePass, LastPass, Authy, etc.)
+│   │   ├── User-customizable blocklist in Settings
+│   │   └── "Blocked app" card (Image E 4) protecting sensitive windows without reading or capturing
+│   ├── Screen Region Capture Overlay (Image F):
+│   │   ├── Multi-monitor dimmed backdrop, crosshair cursor, thin white selection box with 4 corner handles
+│   │   ├── Live dimension badge ("640 × 220") and peeking Mintu speech bubble ("Drag to select")
+│   │   └── In-memory BGRA image extraction and offline Windows Media OCR
+│   ├── Context Cards & Prompt Injection Defense (Image E 1-5):
+│   │   ├── Quick action cards ("Got 3 lines from active app" -> "Explain" / "Fix it", "Translate" / "Summarize")
+│   │   ├── Context chips inside chat input pill with icon badges
+│   │   ├── "Answer ready" pill with bright mint notification badge dot
+│   │   └── Untrusted user context sandboxing (<untrusted_user_context> XML fencing)
+│   └── First-Use Consent System (Image G):
+│       └── Transparent permissions card with direct link to manage blocklisted apps
 │
-└── Click-Through & Hit-Testing Subsystem
-    ├── Rust 30Hz cursor poller (Win32 GetCursorPos)
-    ├── Dynamic hit-rect synchronization from Webview DOM
-    └── Zero-jitter transparent windows with sub-2% idle CPU
+├── System Media & Notification Integrations
+│   ├── Windows SMTC (System Media Transport Controls):
+│   │   ├── Live playback state, marquee track title, artist subtitle, animated equalizer waveform
+│   │   ├── Extracted album artwork with vibrant gradient fallback
+│   │   ├── Remote control buttons (previous, play/pause, next)
+│   │   └── Desktop pet dances in Free mode during playback!
+│   └── Windows UserNotificationListener:
+│       ├── Priority notification queue interrupting lower-priority states
+│       ├── 6.5s auto-dismiss with hover pause/resume and immediate dismiss button
+│       └── Pet alert reactions and notification pills
+│
+└── Layered Vector SVG Skin & Animation Engine (Image A Reference)
+    ├── 15 canonical poses: idle, walk, sleep, wake, think, talk, happy, curious, alert, dangle, landing, dance, headphones-focus
+    ├── Blended state transitions (cross-fading pose parameters without jarring cuts)
+    ├── Spring follow-through physics for floppy ears and curly tail
+    └── Layered micro-animations (breathing, blinks, double-blinks, ear twitches, eye saccades)
 ```
-
-### Window Architecture & Compositor Optimization
-Mintu uses a dual-window architecture:
-1. **Island Window (`main`)**: Compact 520x380 transparent window anchored top-center of the primary monitor work area.
-2. **Desktop Roaming Window (`free`)**: Anchored along the bottom above the taskbar.
-
-*Why not a single full-screen window?*
-A single full-screen transparent window forces the OS Desktop Window Manager (DWM) to blend a massive 4K/full-display surface on every frame, consuming unnecessary GPU and power even when idle. Two compact, targeted transparent windows isolate rendering, allow completely hiding the inactive surface (0% GPU/CPU when hidden), and eliminate click-through artifacts across unrelated desktop zones.
 
 ---
 
-## Roadmap
+## Milestone Roadmap
 
 | Milestone | Status | Description |
 |---|---|---|
-| **1. Shell + Island + Animation Engine** | **Completed** | Full liquid Dynamic Island, layered SVG pet (Image A), 15 animation states, physics, free mode, debug matrix |
-| **2. Local AI Chat** | Planned | Bundled `llama.cpp` sidecar, automated hardware model selection, streaming token reaction |
-| **3. Context Engine** | Planned | Global hotkey, screen-region capture, selected text context ingestion |
-| **4. Native Tools** | Planned | File system, app launcher, clipboard, system reminders with safety confirmations |
-| **5. Memory & Personality** | Planned | SQLite + local vector embeddings, pet mood reacting to user activity |
-| **6. Island Modules** | Planned | Live focus timer, Spotify/system media controls, OS notifications |
+| **1. Shell + Island + Animation Engine** | **Completed** | Full liquid Dynamic Island, layered SVG pet (Image A), 15 animation states, kinematics, free mode, debug matrix |
+| **2. Local AI Chat** | **Completed** | `llama.cpp` sidecar, hardware auto-detection, resumable downloader with SHA-256 validation, streaming chat, SQLite persistence |
+| **3. Context Engine & System Integrations** | **Completed** | Global hotkeys, clipboard-safe text capture, screen region capture, offline Windows Media OCR, SMTC media controls, system notifications, privacy blocklist, Image E/F/G/H cards |
+| **4. Native System Tools** | **Completed** | Safe sandboxed tools (file search, Recycle Bin move with deny-default confirmation, system reminders, app/url launcher), SQLite audit logging |
+| **5. Real Local Chat, Memory & Mood** | **Completed** | Verified model downloads (Qwen 2.5 LFS checksums & local embeddings), multi-chat drawer with SQLite FTS5 search, 30s undo, unsent draft persistence, version branching `< Version 1 / 2 >`, user-controlled local memory with `<user_memories_data>` injection, app-event-driven pet moods, Free mode parity, strict zero-emoji design |
+| **6. Island Modules, Focus & Status Widgets** | **Completed** | UI bugfixes (Images I, J, K), modular framework (`IslandModule`, `ModuleRegistry`), Timer & Focus Engine (Image B headphones pet, countdown, Pomodoro 4-session cycle, stopwatch, absolute `targetEndTime` persistence surviving reboots/sleep, focus notification queuing, local history), local hardware status widgets (Win32 `GetSystemPowerStatus`, `GetSystemTimes`, `GlobalMemoryStatusEx`, `GetDiskFreeSpaceExW`, `GetIfTable`), Reduce Motion accessibility |
 | **7. Local Voice** | Planned | Embedded offline speech-to-text (Whisper) and text-to-speech |
 | **8. Community Ecosystem** | Planned | Skin/plugin registry, GitHub Releases, skin creator workshop |
+
+---
+
+## Shortcuts & Controls
+
+| Shortcut | Action | Description |
+|---|---|---|
+| <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Space</kbd> | **Ask Mintu / Selected Text** | Captures active text selection without wiping your clipboard; displays Image E context card or attaches snippet to AI chat. |
+| <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> | **Screen Region Capture** | Opens crosshair screen dimmer (Image F). Drag to select any rectangle for instant local OCR and visual context. |
+| <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>M</kbd> | **Toggle Island / Free Mode** | Instantly toggles between Dynamic Island mode and Free desktop roaming. |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd> | **Developer Debug Matrix** | Opens test matrix (default OFF in release, ON in dev). Can be enabled/disabled in Settings. Never leaves permanent hints on screen. |
+| <kbd>Esc</kbd> | **Dismiss / Collapse** | Closes Debug Matrix, collapses expanded AI chat, or cancels active screen capture. |
+| **Double-Click (Island)** | **Hop Out** | Pops Mintu out of the island into Free desktop roaming mode. |
+| **Double-Click (Free)** | **Dock Back** | Summons Mintu back into the Dynamic Island. |
+| **Drag & Throw (Free)** | **Physics Kinematics** | Drag Mintu anywhere on screen; toss him to watch natural gravity, ground bounce, and squash & stretch! Bring within 120px of the island to magnetically dock. |
+
+---
+
+## Privacy Guardian & Blocklist
+
+Mintu runs **100% locally on your computer**. No telemetry, no cloud API calls, and zero external network requests for inference or OCR.
+
+1. **Automatic Credential App Protection**: Mintu automatically inspects the active foreground process. Password managers and credential stores are blocked by default:
+   - `1password.exe`, `bitwarden.exe`, `keepass.exe`, `keepassxc.exe`, `lastpass.exe`, `authy.exe`, `dashlane.exe`, `nordpass.exe`, `enpass.exe`, `cmdkey.exe`, `credman.exe`.
+2. **"Blocked App" Card (Image E 4)**: Whenever a blocked window is active, Mintu displays a shy, respectful card: *"I can't look at this one"*, and refuses to read text or take screenshots.
+3. **Custom Blocklist**: Add any executable name in **Settings → Privacy App Blocklist**.
+4. **Clipboard Safety**: Mintu saves your original clipboard contents before simulating copy operations, and immediately restores your original clipboard once captured.
+5. **Prompt Injection Defense**: Ingested text and OCR contents are isolated inside `<untrusted_user_context>` XML delimiters with explicit instructions forbidding context data from overriding pet identity or system behavior.
+
+---
+
+## Milestone 5: Local Chat, Management, Memory & Mood
+
+### 1. Verified Model Catalog & Offline Sidecar
+- All model catalog entries in `models.json` have verified SHA-256 hashes, exact byte counts, and stream completeness checks against upstream Hugging Face Git LFS.
+- Supports verified lightweight models (Qwen 2.5 0.5B, 1.5B, 3B, 7B) and local text embeddings (`nomic-embed-text-v1.5`).
+- Automatic model selection with clear offline fallback (`No model · Local`) and in-app downloader when no models are installed.
+- Mid-stream cancellation: stopping generation instantly terminates inference and releases VRAM/CPU.
+
+### 2. Multi-Chat Management
+- **Drawer List**: Expandable conversations drawer inside Dynamic Island and Free mode card; shows title, model tag, last message preview, and streaming indicator dot.
+- **SQLite FTS5 Search**: Real-time full-text search across all conversation titles and message contents with zero latency.
+- **Unsent Draft Persistence**: Typing drafts are saved automatically per chat and restored when returning to earlier chats.
+- **Actions**: Rename chat, pin/unpin to top, duplicate conversation, clear messages (with confirmation), and delete with an immediate **30-second Undo banner**.
+- **Message Version Branching**: Editing a user message or regenerating an assistant reply branches into `< Version 1 / 2 >` without destroying earlier conversation branches.
+
+### 3. Local-Only, User-Controlled Memory
+- Explicit memory creation only: triggered by `"remember that..."` commands or clicking `"Remember this"` on any message.
+- Context injection: injected before responses inside strict `<user_memories_data>` XML fences as inert data facts, never as system instructions.
+- Full user control in Settings: view all saved memories, pin, edit, delete, export to Markdown, or `"Forget everything"` with confirmation.
+- Memory killswitch: toggling Memory off stops all memory reading and writing without wiping history.
+- Local SQLite database only; never written to logs, never transmitted to external cloud servers.
+
+### 4. App-Event-Driven Pet Mood
+- Mood states: `calm`, `cheerful`, `sleepy`, `curious`, `focused`, `worried`, `proud`.
+- Derived **strictly from local app events** (idle time, long sessions, completed tasks, music playback, tool errors).
+- **Never changes AI answers** and is never stored as personal user profiling traits.
+- Rate-limited happy hops (maximum once per 30 seconds) on successful task completions.
+- Sleep on 10 minutes idle, wake animation on user return.
+- Quiet mode toggle in Settings (animations only, no speech bubbles).
+- **Strict Zero Emoji**: Consistent with core project standards, no emojis are used in the application.
+
+---
+
+## Milestone 6: Island Modules, Timer/Focus & Status Widgets
+
+### 1. Island Module System & How to Write a Module
+The Dynamic Island features an extensible, lightweight module framework governed by `ModuleRegistry` and `IslandModule`:
+- **Interface contract (`src/modules/types.ts`)**:
+  ```typescript
+  export interface IslandModule {
+    id: string;
+    name: string;
+    icon: string;       // Clean SVG icon
+    priority: number;   // ActivityManager priority (running_timer: 40, status_widgets: 20)
+    updateRateHz?: number; // 1 Hz for active timers, 0.2 Hz for idle stats
+
+    start(context: ModuleContext): void;
+    stop(): void;
+    isActive(): boolean;
+
+    renderCompact(container: HTMLElement, options: { mintuInside: boolean }): void;
+    renderExpanded?(container: HTMLElement): void;
+    renderSettings?(container: HTMLElement): void;
+    onTick?(): void;
+    onVisibilityChange?(visible: boolean): void;
+  }
+  ```
+- **Lifecycle & Throttling**: Modules update only when visible; timers pause when the island is collapsed to ensure sub-1% CPU idle consumption.
+- **Priority Resolution**: Managed dynamically through `ActivityManager`:
+  `urgent_notif (100)` > `tool_approval (85)` > `context_card/reading (80)` > `chat_active (70)` > `download_progress (60)` > `normal_notif (50)` > `running_timer (40)` > `music_active (30)` > `status_widgets (20)` > `idle (10)` > `collapsed (0)`.
+
+### 2. Timer & Focus Module (Image B Target)
+- **Compact View**: Follows the Image B "Timer" reference design with Mintu wearing headphones on the left, an SVG circular progress ring (`#10B981` focus, `#38BDF8` break), and large time digits.
+- **Absolute Target End Time Persistence**: Stores `targetEndTime` as an absolute epoch timestamp. If Windows enters sleep, hibernation, or the application restarts, the timer calculates elapsed time without clock drift. If the timer expired while closed, Mintu announces completion: `"Timer finished at HH:MM"`.
+- **Modes**:
+  - **Countdown**: Configurable durations with presets (5, 10, 15, 25, 45, 60 minutes) and custom input.
+  - **Pomodoro**: Standard 25/5 cycle with a 4-session tracker (`● ● ○ ○`), transitioning to a 15-minute long break after 4 focus sessions. Break phase triggers Mintu's calm stretch and happy animation.
+  - **Stopwatch**: Precision millisecond counter with pause/resume and reset.
+- **Focus Mode & Notification Silencing**: When active, normal non-urgent notifications are silently queued. When the focus session ends, queued notifications surface gracefully.
+- **Natural Language Tool Execution**: AI companion can start, stop, or inspect timers via sandboxed `start_timer`, `stop_timer`, and `get_timer_status` tools.
+
+### 3. Local Status Widgets & Hardware Data Sources
+All hardware inspection is strictly local via lightweight Win32 system APIs with zero external network requests:
+- **Battery**: Win32 `GetSystemPowerStatus` (`battery_percent`, `is_charging`). Displays low battery alert and worried Mintu if battery drops below 15% on battery power.
+- **CPU & RAM**: Win32 `GetSystemTimes` and `GlobalMemoryStatusEx` (`cpu_percent`, `ram_percent`, `ram_free_mb`, `ram_total_mb`).
+- **Disk Free Space**: Win32 `GetDiskFreeSpaceExW` for local primary drive.
+- **Local Network**: Win32 `GetIfTable` monitoring local byte counters (total bytes sent/received without packet sniffing or host pinging).
+- **AI Status**: Local model name or cloud provider name with active LLM state (`idle`, `thinking`, `streaming`).
+- **Interactive Cycling & Pinning**: Click or scroll on the idle status island to cycle widgets. Any widget can be pinned as the default display.
+- **In-Memory Sparklines**: 30-sample rolling history for visual load inspection.
+
+### 4. Accessibility: Reduce Motion
+- Supports Windows system accessibility setting (`prefers-reduced-motion`).
+- In-app override in Settings (`Follow Windows System Setting`, `Always Reduced Motion`, `Full Motion`).
+- When reduced motion is active, liquid springs, bouncing kinematics, and ear twitches are replaced with gentle 150ms opacity fades and immediate position updates.
+
+### 5. Privacy Statement for Focus History
+- Focus session logs (start time, duration, label, completion status) are recorded **exclusively in local storage**.
+- They are **never sent to AI models**, never included in LLM context windows, and never transmitted over any network.
+- Users can view, export to Markdown, or permanently clear focus history at any time in Settings.
 
 ---
 
 ## Prerequisites & Building
 
 ### Prerequisites
-- **Node.js**: v18+ (tested on Node v24)
+- **Node.js**: v18+ (tested on Node v20/v22/v24)
 - **Rust Toolchain**: 1.78+ (`rustc`, `cargo`)
 - **C/C++ Toolchain**: MinGW-w64 (`gcc`, `dlltool`) or MSVC C++ Build Tools
-- **OS**: Windows 11 / 10 (macOS and Linux cross-platform ready)
+- **OS**: Windows 11 / 10 (Windows Media OCR and SMTC are native to Windows; macOS/Linux fallbacks included)
 
 ### Development
 ```bash
@@ -82,98 +230,21 @@ npm run tauri dev
 
 ### Production Build
 ```bash
-# Build optimized standalone executable and NSIS installer
+# Compile and package standalone executable + NSIS installer with official Mintu branding
 npm run tauri build
 ```
 The installer will be generated in `src-tauri/target/release/bundle/nsis/mintu_0.1.0_x64-setup.exe`.
 
 ---
 
-## Controls & Hidden Debug Matrix
-
-- **Toggle Debug Matrix**: Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd> or click the `Ctrl+Shift+D` pill at the bottom-right.
-- **Switch to Free Desktop Mode**: Double-click on Mintu inside the Dynamic Island, or select "Switch to Free Mode" in the Debug Matrix or System Tray.
-- **Return to Island**: Double-click on Mintu while roaming on the desktop.
-- **Drag & Throw (Free Mode)**: Click and drag Mintu with the mouse; fling him into the air to see natural gravity drop, bounce, and landing squash & stretch!
-
----
-
-## How to Create a Skin
-
-Mintu supports modular skins via simple JSON files located in `public/skins/<skin-id>/skin.json`.
-
-### 1. Vector SVG Skin (`type: "svg"`)
-SVG skins recolor Mintu's layered character parts using CSS variables:
-
-```json
-{
-  "id": "strawberry-mintu",
-  "name": "Strawberry Mintu",
-  "author": "Community Artist",
-  "version": "1.0.0",
-  "type": "svg",
-  "colors": {
-    "petBody": "#FFCCD5",
-    "petBodyShadow": "#FFB3C1",
-    "petBelly": "#FFF0F3",
-    "petBellyShadow": "#FFE5EC",
-    "petOutline": "#4A282E",
-    "petEye": "#3A1A20",
-    "petEyeHighlight": "#FFFFFF",
-    "petBlush": "#FF758F",
-    "petNose": "#3A1A20",
-    "petMouth": "#4A282E",
-    "petTongue": "#FF4D6D",
-    "petEarInner": "#FFB3C1",
-    "petGroundShadow": "rgba(74, 40, 46, 0.18)",
-    "accessoryHeadphones": "#590D22",
-    "accessoryAccent": "#FF4D6D"
-  }
-}
-```
-
-### 2. Spritesheet Skin (`type: "spritesheet"`)
-Spritesheet skins provide custom frame-by-frame pixel art or raster animations matching Mintu's canonical state names:
-
-```json
-{
-  "id": "pixel-mintu",
-  "name": "Pixel Mintu 8-Bit",
-  "author": "Pixel Wizard",
-  "version": "1.0.0",
-  "type": "spritesheet",
-  "colors": {
-    "petBody": "#8FE0C8",
-    "petBelly": "#FFF6E8",
-    "petOutline": "#1E2923"
-  },
-  "spritesheet": {
-    "frameWidth": 64,
-    "frameHeight": 64,
-    "states": {
-      "idle": { "x": 0, "y": 0, "frames": 4 },
-      "walk": { "x": 0, "y": 64, "frames": 4 },
-      "sleep": { "x": 0, "y": 128, "frames": 2 },
-      "happy": { "x": 0, "y": 192, "frames": 4 },
-      "think": { "x": 0, "y": 256, "frames": 2 },
-      "talk": { "x": 0, "y": 320, "frames": 3 },
-      "alert": { "x": 0, "y": 384, "frames": 2 },
-      "curious": { "x": 0, "y": 448, "frames": 2 }
-    }
-  }
-}
-```
-
----
-
 ## Public Developer API
 
-Mintu exposes a typed, clean API on `window.mintu` for Milestones 2–8:
+Mintu exposes a typed, clean API on `window.mintu`:
 
 ```typescript
 // Pet Expression & Animation
 window.mintu.pet.setState("happy");          // Triggers blended transition to any state
-window.mintu.pet.say("Need help with that?");// Pops up cute speech bubble with auto-dismiss
+window.mintu.pet.say("Need help with that?");// Pops up speech bubble with auto-dismiss
 window.mintu.pet.react("curious");           // Emotion shortcut
 window.mintu.pet.lookAt(0.5, -0.2);          // Directs pupil & head focus
 window.mintu.pet.setAccessory("headphones"); // Equips accessory overlay
@@ -189,7 +260,7 @@ window.mintu.island.notify({                 // Posts interactive notification
   ]
 });
 
-// App Mode
+// App Mode & Context
 window.mintu.app.setMode("free");            // Transitions Mintu to desktop roaming
 window.mintu.app.loadSkin(customSkinJson);   // Applies runtime theme/skin
 ```

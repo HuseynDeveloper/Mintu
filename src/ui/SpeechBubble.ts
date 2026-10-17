@@ -42,4 +42,16 @@ export class SpeechBubble {
     }
     this.el.classList.remove("visible");
   }
+
+  updatePosition(petX: number, petY: number): void {
+    const bubbleW = 180;
+    const bubbleH = 50;
+    let left = petX - bubbleW + 30;
+    let top = petY - bubbleH - 18;
+    if (left < 16) left = petX + 90;
+    if (top < 60) top = petY + 100;
+    this.el.style.left = `${left}px`;
+    this.el.style.top = `${top}px`;
+  }
 }
+
