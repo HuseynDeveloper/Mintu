@@ -259,7 +259,7 @@ export class StatusModule implements IslandModule {
               <path d="M22 5v4" stroke-linecap="round" />
             </svg>
             <span style="font-size: 12px; font-weight: 700; color: #ffffff;">${b}%</span>
-            ${chg ? '<span style="color: #10B981; font-size: 11px;">⚡</span>' : ""}
+            ${chg ? '<svg width="10" height="12" viewBox="0 0 24 24" fill="#10B981" style="vertical-align: middle;"><path d="M13 2L3 14h7v8l11-12h-8l1-8z"/></svg>' : ""}
           </div>
         `;
         break;
@@ -382,7 +382,7 @@ export class StatusModule implements IslandModule {
           }; border: 1px solid ${isPinned ? '#10B981' : 'rgba(255,255,255,0.1)'}; color: ${
       isPinned ? '#10B981' : '#9ca3af'
     }; font-size: 11px; cursor: pointer;">
-            ${isPinned ? '★ Pinned' : '☆ Pin to island'}
+            ${isPinned ? 'Pinned' : 'Pin to island'}
           </button>
         </div>
 

@@ -270,4 +270,4 @@ window.mintu.app.loadSkin(customSkinJson);   // Applies runtime theme/skin
 
 ## License
 
-MIT License. Designed and crafted with 💚 for pair programming companions everywhere.
+MIT License. Designed and crafted for pair programming companions everywhere.
