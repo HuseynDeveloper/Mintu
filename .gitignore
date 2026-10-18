@@ -27,3 +27,15 @@ dist-ssr
 src-tauri/target
 target
 D:/mintu-target
+
+# Executables and binary artifacts (belong in GitHub Releases, not source control)
+*.exe
+!src-tauri/binaries/llama/*.exe
+*.dll
+!src-tauri/binaries/llama/*.dll
+*.crx
+*.pem
+*.zip
+*.tar.gz
+err.txt
+out.txt
