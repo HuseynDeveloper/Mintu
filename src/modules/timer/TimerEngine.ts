@@ -386,6 +386,12 @@ export class TimerEngine {
       // Keep up to 200 sessions locally
       const trimmed = history.slice(0, 200);
       localStorage.setItem("mintu_focus_history", JSON.stringify(trimmed));
+
+      if (typeof window !== "undefined") {
+        import("../../core/EventBus").then(({ eventBus }) => {
+          eventBus.emit("timer:focus-completed", { durationSec, label });
+        }).catch(() => {});
+      }
     } catch {}
   }
 

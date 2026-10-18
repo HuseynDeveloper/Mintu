@@ -1210,6 +1210,22 @@ pub fn run() {
                 }
             });
 
+            // Background Smart Clipboard monitor (Milestone 8)
+            let clip_handle = handle.clone();
+            std::thread::spawn(move || {
+                let mut last_clipboard_text = String::new();
+                loop {
+                    std::thread::sleep(std::time::Duration::from_millis(700));
+                    if let Ok(text) = tools::read_clipboard_text_safe() {
+                        let trimmed = text.trim();
+                        if !trimmed.is_empty() && trimmed.len() <= 35000 && trimmed != last_clipboard_text {
+                            last_clipboard_text = trimmed.to_string();
+                            let _ = clip_handle.emit("clipboard-copied", trimmed);
+                        }
+                    }
+                }
+            });
+
             app.manage(AppState {
                 hit_regions,
                 mode: app_mode,

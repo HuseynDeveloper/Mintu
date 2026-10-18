@@ -31,6 +31,9 @@ import { timerEngine } from "../modules/timer/TimerEngine";
 import { statusModule } from "../modules/status/StatusModule";
 import { moduleRegistry } from "../modules/ModuleRegistry";
 import { voiceManager } from "../voice/VoiceManager";
+import { xpManager } from "../gamification/XPManager";
+import { smartClipboard } from "../clipboard/SmartClipboard";
+import { updateChecker } from "../updater/UpdateChecker";
 
 export interface NotificationPayload {
   icon?: string;
@@ -184,6 +187,7 @@ export class IslandContentRenderer {
           <div class="expanded-header-info" style="position: relative;">
             <span class="expanded-pet-name">Mintu AI</span>
             <span class="expanded-model-badge" id="mintu-model-tag" role="button" tabindex="0" title="Switch provider / model">Loading...</span>
+            <span class="expanded-level-badge" id="mintu-level-badge" title="Focus Level &amp; XP">Lvl 1 · 0 XP</span>
             <div class="model-switcher-popover" id="model-switcher-popover"></div>
           </div>
           <div class="expanded-top-actions">
@@ -252,6 +256,23 @@ export class IslandContentRenderer {
           <div class="chat-undo-banner" id="chat-undo-banner" style="display: none;">
             <span id="chat-undo-text">Chat deleted.</span>
             <button class="btn-undo" id="btn-chat-undo">Undo (<span id="chat-undo-sec">30</span>s)</button>
+          </div>
+
+          <!-- Smart Clipboard Pill (Milestone 8) -->
+          <div class="smart-clipboard-pill" id="smart-clipboard-pill" style="display: none;">
+            <div class="smart-clip-content">
+              <span class="smart-clip-badge" id="smart-clip-badge">Code</span>
+              <span class="smart-clip-text" id="smart-clip-text">Koddakı xətanı yoxla</span>
+            </div>
+            <button class="smart-clip-action-btn" id="btn-smart-clip-action">Sorğu ver</button>
+            <button class="smart-clip-close-btn" id="btn-smart-clip-close">✕</button>
+          </div>
+
+          <!-- Update Available Banner (Milestone 8) -->
+          <div class="mintu-update-banner" id="mintu-update-banner" style="display: none;">
+            <span id="mintu-update-text">Mintu v0.1.3 hazırdır!</span>
+            <button class="btn-update-action" id="btn-mintu-update-open">Yenilə</button>
+            <button class="btn-update-close" id="btn-mintu-update-close">✕</button>
           </div>
 
           <!-- Image B Greeting row -->
@@ -522,6 +543,47 @@ export class IslandContentRenderer {
                 <div class="setting-hint">Target language for microphone speech input.</div>
               </div>
 
+              <!-- GAMIFICATION & WARDROBE (MILESTONE 8) -->
+              <div class="settings-section-divider">Gamification &amp; Wardrobe (Milestone 8)</div>
+              <div class="setting-item">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 12px; font-weight: 600; color: #E5E7EB;" id="settings-xp-level-title">Level 1 Mintu</span>
+                  <span style="font-size: 11px; color: #34D399; font-weight: 600;" id="settings-xp-points-badge">0 XP</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
+                  <div id="settings-xp-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10B981, #34D399); transition: width 0.3s ease;"></div>
+                </div>
+                <div class="setting-hint" id="settings-xp-hint">Earn 10 XP for each minute of Pomodoro focus. Complete pomodoros to level up and unlock exclusive pet accessories!</div>
+              </div>
+
+              <div class="setting-item">
+                <label class="input-label">Mintu's Wardrobe Accessories</label>
+                <div class="wardrobe-grid" id="wardrobe-items-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px;">
+                  <!-- Accessories injected dynamically by XPManager -->
+                </div>
+                <div class="setting-hint">Select any unlocked accessory to dress Mintu on your desktop and island.</div>
+              </div>
+
+              <!-- SMART CLIPBOARD & AUTO-UPDATER (MILESTONE 8) -->
+              <div class="settings-section-divider">Smart Productivity &amp; Updates (Milestone 8)</div>
+              <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <label class="input-label" style="margin-bottom: 0;">Smart Clipboard Assistant</label>
+                  <input type="checkbox" id="settings-smart-clipboard-toggle" checked style="accent-color: #34D399; width: 16px; height: 16px; cursor: pointer;" />
+                </div>
+                <div class="setting-hint">Shows quick action pill on Ctrl+C (code check, JSON formatting, or Azerbaijani translation).</div>
+              </div>
+
+              <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;">Mintu Version v0.1.2</div>
+                    <div class="setting-hint" id="settings-updater-status">Up to date with GitHub Releases.</div>
+                  </div>
+                  <button class="btn-small-action" id="btn-check-updates-now" style="font-size: 11px; height: 28px;">Check Updates</button>
+                </div>
+              </div>
+
               <div class="setting-item">
                 <label class="input-label">Developer Panel (Ctrl+Shift+D)</label>
                 <select class="mintu-select" id="settings-dev-panel">
@@ -568,6 +630,7 @@ export class IslandContentRenderer {
                   <option value="gemini">Google Gemini</option>
                   <option value="anthropic">Anthropic Claude</option>
                   <option value="openai">OpenAI</option>
+                  <option value="groq">Groq (Ultra-Fast Whisper &amp; LLMs)</option>
                   <option value="deepseek">DeepSeek</option>
                   <option value="qwen">Qwen (DashScope)</option>
                   <option value="kimi">Moonshot Kimi</option>
@@ -999,30 +1062,49 @@ export class IslandContentRenderer {
         if (voiceManager.isListening()) {
           voiceManager.stopListening();
           micBtn.classList.remove("listening");
+          micBtn.classList.add("transcribing");
+          this.chatInputEl.placeholder = "Səs mətnə çevrilir...";
         } else {
+          micBtn.classList.remove("transcribing");
           micBtn.classList.add("listening");
+          this.chatInputEl.placeholder = "Danışın... Bitirdikdə mikrofona vurun";
+
           const started = voiceManager.startListening(
             (transcript, isFinal) => {
               this.chatInputEl.value = transcript;
               if (isFinal && transcript.trim()) {
                 micBtn.classList.remove("listening");
+                micBtn.classList.remove("transcribing");
+                this.chatInputEl.placeholder = "Mintu-ya bir şey yaz və ya soruş...";
                 this.submitUserMessage();
               }
             },
             (err) => {
               micBtn.classList.remove("listening");
-              eventBus.emit("pet:say", { text: `Mic: ${err}` });
+              micBtn.classList.remove("transcribing");
+              this.chatInputEl.placeholder = "Mintu-ya bir şey yaz və ya soruş...";
+              eventBus.emit("pet:say", { text: err });
             },
-            (listening) => {
-              if (listening) {
+            (listening, statusText) => {
+              if (statusText === "transcribing") {
+                micBtn.classList.remove("listening");
+                micBtn.classList.add("transcribing");
+                this.chatInputEl.placeholder = "Səs mətnə çevrilir...";
+              } else if (listening) {
                 micBtn.classList.add("listening");
+                micBtn.classList.remove("transcribing");
+                this.chatInputEl.placeholder = "Danışın... Bitirdikdə mikrofona vurun";
               } else {
                 micBtn.classList.remove("listening");
+                micBtn.classList.remove("transcribing");
+                this.chatInputEl.placeholder = "Mintu-ya bir şey yaz və ya soruş...";
               }
             }
           );
           if (!started) {
             micBtn.classList.remove("listening");
+            micBtn.classList.remove("transcribing");
+            this.chatInputEl.placeholder = "Mintu-ya bir şey yaz və ya soruş...";
           }
         }
       });
@@ -1556,6 +1638,176 @@ export class IslandContentRenderer {
     this.setupContextAndMediaHandlers();
     this.setupActivityManagerBridge();
     this.initIPCListeners();
+    this.setupMilestone8Handlers();
+  }
+
+  private setupMilestone8Handlers(): void {
+    // 1. Gamification: Level & XP Stats
+    const updateLevelBadge = () => {
+      const progress = xpManager.getProgress();
+      const stats = xpManager.getStats();
+      const badgeEl = this.slotExpanded.querySelector("#mintu-level-badge");
+      if (badgeEl) {
+        badgeEl.textContent = `Lvl ${progress.level} · ${stats.totalXP} XP`;
+      }
+
+      const titleEl = this.slotExpanded.querySelector("#settings-xp-level-title");
+      const pointsBadge = this.slotExpanded.querySelector("#settings-xp-points-badge");
+      const progressBar = this.slotExpanded.querySelector("#settings-xp-progress-bar") as HTMLElement;
+      const hintEl = this.slotExpanded.querySelector("#settings-xp-hint");
+
+      if (titleEl) titleEl.textContent = `Level ${progress.level} Mintu`;
+      if (pointsBadge) pointsBadge.textContent = `${stats.totalXP} XP (${progress.xpInLevel}/${progress.xpNeededForLevel} XP)`;
+      if (progressBar) progressBar.style.width = `${progress.progressPercent}%`;
+      if (hintEl) {
+        hintEl.textContent = `${stats.pomodorosCompleted} Pomodoros tamamlandı, ${stats.focusMinutes} fokus dəqiqəsi qazanıldı. Səviyyə artdıqca yeni aksesuarlar açılır!`;
+      }
+    };
+
+    const renderWardrobe = () => {
+      const gridEl = this.slotExpanded.querySelector("#wardrobe-items-grid");
+      if (!gridEl) return;
+      const stats = xpManager.getStats();
+      const equipped = xpManager.getEquippedAccessory();
+
+      const accessories = [
+        { id: "none", name: "Standart Mintu", reqLevel: 1 },
+        { id: "glasses", name: "Dəbli Eynək", reqLevel: 1 },
+        { id: "coffee_cup", name: "İsti Qəhvə Fincanı", reqLevel: 2 },
+        { id: "winter_hat", name: "Qış Papağı", reqLevel: 3 },
+        { id: "headphones", name: "Fokus Qulaqlıqları", reqLevel: 4 },
+      ];
+
+      gridEl.innerHTML = accessories
+        .map((acc) => {
+          const isUnlocked = stats.unlockedAccessories.includes(acc.id) || stats.level >= acc.reqLevel;
+          const isEquipped = equipped === acc.id;
+          const statusText = isEquipped ? "İstifadədədir" : isUnlocked ? "Təchiz et" : `Lvl ${acc.reqLevel}-də açılır`;
+          return `
+            <div class="wardrobe-item-card ${isEquipped ? "equipped" : ""} ${!isUnlocked ? "locked" : ""}" data-acc-id="${acc.id}">
+              <div class="wardrobe-item-name">${acc.name}</div>
+              <div class="wardrobe-item-status">${statusText}</div>
+            </div>
+          `;
+        })
+        .join("");
+
+      gridEl.querySelectorAll(".wardrobe-item-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const id = (card as HTMLElement).dataset.accId;
+          if (!id) return;
+          const isUnlocked = stats.unlockedAccessories.includes(id) || stats.level >= (accessories.find((a) => a.id === id)?.reqLevel || 1);
+          if (!isUnlocked) {
+            eventBus.emit("pet:say", { text: "Bu aksesuar daha yüksək səviyyədə açılır!" });
+            return;
+          }
+          xpManager.equipAccessory(id);
+          renderWardrobe();
+          eventBus.emit("pet:say", { text: "Aksesuar dəyişdirildi!" });
+        });
+      });
+    };
+
+    updateLevelBadge();
+    renderWardrobe();
+
+    eventBus.on("gamification:xp-gained", () => {
+      updateLevelBadge();
+      renderWardrobe();
+    });
+    eventBus.on("gamification:stats-updated", () => {
+      updateLevelBadge();
+      renderWardrobe();
+    });
+
+    // 2. Smart Clipboard Assistant
+    const clipPill = this.slotExpanded.querySelector("#smart-clipboard-pill") as HTMLElement;
+    const clipBadge = this.slotExpanded.querySelector("#smart-clip-badge") as HTMLElement;
+    const clipText = this.slotExpanded.querySelector("#smart-clip-text") as HTMLElement;
+    const clipActionBtn = this.slotExpanded.querySelector("#btn-smart-clip-action") as HTMLButtonElement;
+    const clipCloseBtn = this.slotExpanded.querySelector("#btn-smart-clip-close") as HTMLButtonElement;
+    const clipToggle = this.slotExpanded.querySelector("#settings-smart-clipboard-toggle") as HTMLInputElement;
+
+    if (clipToggle) {
+      clipToggle.checked = smartClipboard.isEnabled();
+      clipToggle.addEventListener("change", () => {
+        smartClipboard.setEnabled(clipToggle.checked);
+      });
+    }
+
+    eventBus.on("clipboard:action-suggested", (action: any) => {
+      if (!clipPill || !action) return;
+      if (clipBadge) clipBadge.textContent = String(action.type).toUpperCase();
+      if (clipText) clipText.textContent = action.label;
+      clipPill.style.display = "flex";
+    });
+
+    eventBus.on("clipboard:action-cleared", () => {
+      if (clipPill) clipPill.style.display = "none";
+    });
+
+    clipCloseBtn?.addEventListener("click", () => {
+      smartClipboard.clearAction();
+    });
+
+    clipActionBtn?.addEventListener("click", () => {
+      const action = smartClipboard.getCurrentAction();
+      if (action) {
+        smartClipboard.clearAction();
+        this.chatInputEl.value = action.prompt;
+        this.submitUserMessage();
+      }
+    });
+
+    // 3. GitHub Releases Auto-Updater
+    const updateBanner = this.slotExpanded.querySelector("#mintu-update-banner") as HTMLElement;
+    const updateText = this.slotExpanded.querySelector("#mintu-update-text") as HTMLElement;
+    const updateOpenBtn = this.slotExpanded.querySelector("#btn-mintu-update-open") as HTMLButtonElement;
+    const updateCloseBtn = this.slotExpanded.querySelector("#btn-mintu-update-close") as HTMLButtonElement;
+    const checkUpdatesBtn = this.slotExpanded.querySelector("#btn-check-updates-now") as HTMLButtonElement;
+    const updaterStatusHint = this.slotExpanded.querySelector("#settings-updater-status") as HTMLElement;
+
+    eventBus.on("app:update-available", (info: any) => {
+      if (updateBanner && info) {
+        if (updateText) updateText.textContent = `Mintu v${info.latestVersion} hazırdır, yenilənsin?`;
+        updateBanner.style.display = "flex";
+      }
+    });
+
+    updateCloseBtn?.addEventListener("click", () => {
+      if (updateBanner) updateBanner.style.display = "none";
+    });
+
+    updateOpenBtn?.addEventListener("click", () => {
+      const cached = updateChecker.getCachedUpdate();
+      const url = cached?.releaseUrl || "https://github.com/TalibliTural/Mintu/releases";
+      if (typeof window !== "undefined") {
+        import("@tauri-apps/api/core")
+          .then(({ invoke }) => {
+            invoke("tools_open_url", { url }).catch(() => window.open(url, "_blank"));
+          })
+          .catch(() => window.open(url, "_blank"));
+      }
+    });
+
+    checkUpdatesBtn?.addEventListener("click", async () => {
+      if (updaterStatusHint) updaterStatusHint.textContent = "Yoxlanılır...";
+      try {
+        const res = await updateChecker.checkForUpdates();
+        if (res.available) {
+          if (updaterStatusHint) updaterStatusHint.textContent = `Yeni versiya tapıldı: v${res.latestVersion}`;
+          if (updateBanner) {
+            if (updateText) updateText.textContent = `Mintu v${res.latestVersion} hazırdır, yenilənsin?`;
+            updateBanner.style.display = "flex";
+          }
+        } else {
+          if (updaterStatusHint) updaterStatusHint.textContent = "Mintu ən son versiyadadır (v0.1.2).";
+          eventBus.emit("pet:say", { text: "Mintu artıq ən son versiyadadır!" });
+        }
+      } catch {
+        if (updaterStatusHint) updaterStatusHint.textContent = "Yeniləmə yoxlanılarkən xəta baş verdi.";
+      }
+    });
   }
 
   private setupContextAndMediaHandlers(): void {

@@ -20,6 +20,7 @@ import { DebugPanel } from "./ui/DebugPanel";
 import { skinLoader } from "./pet/skins/SkinLoader";
 import { eventBus } from "./core/EventBus";
 import { activityManager } from "./core/ActivityManager";
+import { xpManager } from "./gamification/XPManager";
 
 export type PetLocation =
   | "inIsland"
@@ -240,6 +241,13 @@ class MintuApp {
       }
     }).catch(() => {});
 
+    // Milestone 8: Apply equipped accessory from wardrobe
+    const initialAccessory = xpManager.getEquippedAccessory();
+    if (initialAccessory && initialAccessory !== "none") {
+      this.islandAnimController.setAccessory(initialAccessory as any);
+      this.freeAnimController.setAccessory(initialAccessory as any);
+    }
+
     // Ensure island stays open in expanded chat mode on startup
     this.islandController.setState("expanded");
 
@@ -362,6 +370,26 @@ class MintuApp {
     });
 
     const el = this.freePetRenderer.container;
+
+    // Milestone 8: Playful hover reactions on free pet
+    el.addEventListener("pointerenter", () => {
+      if (this.petLocation === "free" && !this.isPointerDown) {
+        const current = this.freeAnimController.getStateName();
+        if (current === "idle" || current === "walk") {
+          const reactions = ["curious", "happy", "talk"];
+          const pick = reactions[Math.floor(Math.random() * reactions.length)];
+          this.freeAnimController.setState(pick, 0.15);
+        }
+      }
+    });
+
+    el.addEventListener("pointerleave", () => {
+      if (this.petLocation === "free" && !this.isPointerDown) {
+        if (this.freeAnimController.getStateName() !== "dragged") {
+          this.freeAnimController.setState("idle", 0.2);
+        }
+      }
+    });
 
     // Pointer down: initiate free pet drag
     el.addEventListener("pointerdown", (e: PointerEvent) => {
@@ -552,6 +580,12 @@ class MintuApp {
       if (Array.isArray(list)) {
         appBridge.setWindowIgnoreList(list);
       }
+    });
+
+    // Milestone 8: Sync accessory changes live across both renderers
+    eventBus.on("pet:accessory-changed", (acc: any) => {
+      this.islandAnimController.setAccessory(acc);
+      this.freeAnimController.setAccessory(acc);
     });
   }
 

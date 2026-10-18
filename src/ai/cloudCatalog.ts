@@ -74,6 +74,16 @@ export const CLOUD_PROVIDERS: Record<string, CloudProviderConfig> = {
     docUrl: "https://platform.moonshot.cn/console/api-keys",
     keyPrefix: "sk-",
   },
+  groq: {
+    id: "groq",
+    name: "Groq (Ultra-Fast Whisper & LLMs)",
+    badge: "Cloud",
+    baseUrl: "https://api.groq.com/openai/v1",
+    defaultModel: "llama-3.3-70b-versatile",
+    models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "whisper-large-v3-turbo"],
+    docUrl: "https://console.groq.com/keys",
+    keyPrefix: "gsk_",
+  },
   custom: {
     id: "custom",
     name: "Custom (OpenAI-Compatible / Proxy / Ollama)",

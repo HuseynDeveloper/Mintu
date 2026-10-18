@@ -53,6 +53,16 @@ export type MintuEventMap = {
   "chat:stream-delta": { delta: string; fullContent: string; convId: string };
   "media-state-changed": any;
   "model-download-progress": any;
+
+  // Milestone 8: Gamification, Living Pet, Smart Clipboard, Updater
+  "gamification:xp-gained": { amount: number; reason: string; totalXP: number; level: number; leveledUp: boolean };
+  "gamification:stats-updated": any;
+  "pet:accessory-changed": string;
+  "timer:focus-completed": { durationSec: number; label?: string };
+  "chat:message-sent": Record<string, any> | void;
+  "clipboard:action-suggested": any;
+  "clipboard:action-cleared": Record<string, any>;
+  "app:update-available": any;
 };
 
 type EventHandler<T> = (data: T) => void;

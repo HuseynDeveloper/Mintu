@@ -178,7 +178,7 @@ impl SidecarManager {
         cmd.arg("--api-key").arg(&api_key);
         cmd.arg("-c").arg(context_length.to_string());
         cmd.arg("-t").arg(threads.to_string());
-        cmd.arg("--embedding").arg("false");
+        cmd.stderr(std::process::Stdio::piped());
 
         // Working directory set to binary directory so Windows finds DLLs (ggml.dll, llama.dll)
         if let Some(parent) = binary_path.parent() {
@@ -219,7 +219,17 @@ impl SidecarManager {
                 let mut state = self.inner.lock().await;
                 if let Some(child_proc) = state.child.as_mut() {
                     if let Ok(Some(exit_status)) = child_proc.try_wait() {
-                        let err_msg = format!("llama-server exited prematurely with status: {}", exit_status);
+                        let mut stderr_text = String::new();
+                        if let Some(mut err_pipe) = child_proc.stderr.take() {
+                            use tokio::io::AsyncReadExt;
+                            let _ = err_pipe.read_to_string(&mut stderr_text).await;
+                        }
+                        let detail = if !stderr_text.trim().is_empty() {
+                            format!("{}: {}", exit_status, stderr_text.trim())
+                        } else {
+                            format!("{}", exit_status)
+                        };
+                        let err_msg = format!("llama-server exited prematurely with status: {}", detail);
                         state.status = "error".to_string();
                         state.error = Some(err_msg.clone());
                         return Err(err_msg);

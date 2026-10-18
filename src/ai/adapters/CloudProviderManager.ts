@@ -188,6 +188,17 @@ export class CloudProviderManager {
     }
     return false;
   }
+
+  public async getApiKey(providerId: string): Promise<string | null> {
+    if (!this.tauriCore) await this.initTauri();
+    if (this.tauriCore) {
+      try {
+        const key: string | null = await this.tauriCore.invoke("get_api_key", { provider: providerId });
+        return key;
+      } catch {}
+    }
+    return null;
+  }
 }
 
 export const cloudProviderManager = new CloudProviderManager();

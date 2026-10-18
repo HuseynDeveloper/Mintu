@@ -44,6 +44,9 @@ export class PetRenderer {
 
   // Accessories
   private elAccHeadphones!: SVGGElement;
+  private elAccGlasses!: SVGGElement;
+  private elAccWinterHat!: SVGGElement;
+  private elAccCoffeeCup!: SVGGElement;
   private elAccSleepZ!: SVGGElement;
   private elAccThinkDots!: SVGGElement;
   private elAccQuestion!: SVGGElement;
@@ -236,6 +239,36 @@ export class PetRenderer {
               fill="var(--pet-accessory-headphones, #374151)" stroke="var(--pet-accessory-headphones-accent, #10B981)" stroke-width="2.2" />
       </g>
 
+      <!-- G: Stylish Round Glasses -->
+      <g id="acc-glasses" style="display: none;">
+        <circle cx="66" cy="74" r="11" fill="none" stroke="#1e293b" stroke-width="2.2" />
+        <circle cx="94" cy="74" r="11" fill="none" stroke="#1e293b" stroke-width="2.2" />
+        <path d="M 77,74 Q 80,71 83,74" fill="none" stroke="#1e293b" stroke-width="2.2" />
+        <path d="M 55,73 L 44,71 M 105,73 L 116,71" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round" />
+        <line x1="61" y1="68" x2="65" y2="65" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+        <line x1="89" y1="68" x2="93" y2="65" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+      </g>
+
+      <!-- H: Knitted Winter Hat -->
+      <g id="acc-winter-hat" style="display: none;">
+        <!-- Fluffy pompom on top -->
+        <circle cx="80" cy="22" r="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+        <!-- Red knitted cap body -->
+        <path d="M 48,52 C 50,30 110,30 112,52 Z" fill="#ef4444" stroke="#dc2626" stroke-width="1.8" />
+        <!-- White folded brim -->
+        <rect x="46" y="47" width="68" height="11" rx="5.5" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+      </g>
+
+      <!-- I: Warm Coffee Cup -->
+      <g id="acc-coffee-cup" style="display: none;">
+        <!-- Rising steam -->
+        <path d="M 114,88 Q 112,83 115,79 M 121,88 Q 124,83 122,79" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Cup -->
+        <path d="M 108,93 L 111,114 C 111,117 125,117 125,114 L 128,93 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.8" />
+        <!-- Mint sleeve -->
+        <rect x="109" y="99" width="18" height="8" rx="2" fill="#34d399" />
+      </g>
+
       <!-- B: Sleep Z's -->
       <g id="acc-sleep-z" style="display: none;" class="acc-float">
         <text x="108" y="38" font-family="'Inter', sans-serif" font-size="14" font-weight="bold" fill="#7ed4bd">Z</text>
@@ -298,6 +331,9 @@ export class PetRenderer {
     this.elMouthFlat = s.querySelector("#mouth-flat")!;
 
     this.elAccHeadphones = s.querySelector("#acc-headphones")!;
+    this.elAccGlasses = s.querySelector("#acc-glasses")!;
+    this.elAccWinterHat = s.querySelector("#acc-winter-hat")!;
+    this.elAccCoffeeCup = s.querySelector("#acc-coffee-cup")!;
     this.elAccSleepZ = s.querySelector("#acc-sleep-z")!;
     this.elAccThinkDots = s.querySelector("#acc-think-dots")!;
     this.elAccQuestion = s.querySelector("#acc-question")!;
@@ -369,6 +405,9 @@ export class PetRenderer {
     // 8. Accessories
     const acc = pose.accessory;
     this.elAccHeadphones.style.display = acc === "headphones" ? "inline" : "none";
+    this.elAccGlasses.style.display = acc === "glasses" ? "inline" : "none";
+    this.elAccWinterHat.style.display = acc === "winter_hat" ? "inline" : "none";
+    this.elAccCoffeeCup.style.display = acc === "coffee_cup" ? "inline" : "none";
     this.elAccSleepZ.style.display = acc === "sleep-z" ? "inline" : "none";
     this.elAccThinkDots.style.display = acc === "think-dots" ? "inline" : "none";
     this.elAccQuestion.style.display = acc === "question" ? "inline" : "none";
@@ -378,6 +417,9 @@ export class PetRenderer {
 
   setAccessory(acc: PetAccessory): void {
     this.elAccHeadphones.style.display = acc === "headphones" ? "inline" : "none";
+    this.elAccGlasses.style.display = acc === "glasses" ? "inline" : "none";
+    this.elAccWinterHat.style.display = acc === "winter_hat" ? "inline" : "none";
+    this.elAccCoffeeCup.style.display = acc === "coffee_cup" ? "inline" : "none";
     this.elAccSleepZ.style.display = acc === "sleep-z" ? "inline" : "none";
     this.elAccThinkDots.style.display = acc === "think-dots" ? "inline" : "none";
     this.elAccQuestion.style.display = acc === "question" ? "inline" : "none";

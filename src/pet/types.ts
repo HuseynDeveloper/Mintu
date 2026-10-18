@@ -4,7 +4,17 @@
 
 export type EyeExpression = "normal" | "sleep" | "happy" | "alert";
 export type MouthExpression = "smile" | "open" | "o" | "sleep" | "flat";
-export type PetAccessory = "none" | "headphones" | "sleep-z" | "think-dots" | "question" | "music-notes" | "sparkles";
+export type PetAccessory =
+  | "none"
+  | "headphones"
+  | "glasses"
+  | "winter_hat"
+  | "coffee_cup"
+  | "sleep-z"
+  | "think-dots"
+  | "question"
+  | "music-notes"
+  | "sparkles";
 
 export interface PetPose {
   // Body transformation
