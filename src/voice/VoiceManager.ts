@@ -43,12 +43,12 @@ export class VoiceManager {
   }
 
   private loadConfig(): VoiceConfig {
-    const ttsEnabled = localStorage.getItem("mintu_tts_enabled") !== "false"; // default true
+    const ttsEnabled = localStorage.getItem("mintu_tts_enabled") === "true"; // default false (disabled per user request)
     const ttsRate = parseFloat(localStorage.getItem("mintu_tts_rate") || "1.05");
     const ttsPitch = parseFloat(localStorage.getItem("mintu_tts_pitch") || "1.15");
     const ttsVolume = parseFloat(localStorage.getItem("mintu_tts_volume") || "1.0");
     const ttsVoiceName = localStorage.getItem("mintu_tts_voice") || "";
-    const sttLanguage = localStorage.getItem("mintu_stt_lang") || "az-AZ";
+    const sttLanguage = localStorage.getItem("mintu_stt_lang") || "auto";
 
     return {
       ttsEnabled,
@@ -188,16 +188,17 @@ export class VoiceManager {
   public async transcribeAudio(audioBlob: Blob): Promise<string> {
     const { cloudProviderManager } = await import("../ai/adapters/CloudProviderManager");
     const activeProvider = cloudProviderManager.getActiveProviderId();
-    const lang = (this.config.sttLanguage || "az-AZ").split("-")[0]; // "az", "en", "tr", "ru", etc.
+    const isExplicitLang = this.config.sttLanguage && this.config.sttLanguage !== "auto";
+    const lang = isExplicitLang ? this.config.sttLanguage.split("-")[0] : undefined;
 
-    // 1. Try Groq Whisper (Blazing fast ~250ms, highly accurate for Azerbaijani)
+    // 1. Try Groq Whisper (Blazing fast ~250ms, multi-language auto-detect including Azerbaijani, English, Russian, etc.)
     const groqKey = await cloudProviderManager.getApiKey("groq");
     if (groqKey) {
       try {
         const formData = new FormData();
         formData.append("file", audioBlob, "audio.webm");
         formData.append("model", "whisper-large-v3-turbo");
-        formData.append("language", lang);
+        if (lang) formData.append("language", lang);
         formData.append("response_format", "json");
 
         const resp = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
@@ -219,14 +220,14 @@ export class VoiceManager {
       }
     }
 
-    // 2. Try OpenAI Whisper
+    // 2. Try OpenAI Whisper (Auto-detects spoken language)
     const openAiKey = await cloudProviderManager.getApiKey("openai");
     if (openAiKey) {
       try {
         const formData = new FormData();
         formData.append("file", audioBlob, "audio.webm");
         formData.append("model", "whisper-1");
-        formData.append("language", lang);
+        if (lang) formData.append("language", lang);
 
         const resp = await fetch("https://api.openai.com/v1/audio/transcriptions", {
           method: "POST",
@@ -247,7 +248,7 @@ export class VoiceManager {
       }
     }
 
-    // 3. Try Gemini multimodal audio transcription
+    // 3. Try Gemini multimodal audio transcription (supports any language: Azerbaijani, English, Russian, etc.)
     const geminiKey = await cloudProviderManager.getApiKey("gemini");
     if (geminiKey) {
       try {
@@ -263,32 +264,38 @@ export class VoiceManager {
         });
 
         const mime = audioBlob.type || "audio/webm";
-        const promptText = `Please transcribe the exact spoken speech from this audio recording verbatim in the original language (${this.config.sttLanguage}). Output strictly and only the transcription text, with no markdown, quotes, notes, or explanations.`;
+        const promptText = "Transcribe the spoken audio verbatim in whatever language is spoken (Azerbaijani, English, Russian, Turkish, etc.). Output strictly and solely the recognized words with zero commentary, formatting, quotation marks, or explanations.";
 
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { inlineData: { mimeType: mime, data: base64Data } },
-                    { text: promptText },
+        // Try gemini-1.5-flash first (universal standard), fallback to gemini-2.0-flash
+        const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-2.5-flash"];
+        for (const m of modelsToTry) {
+          try {
+            const resp = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      parts: [
+                        { inlineData: { mimeType: mime, data: base64Data } },
+                        { text: promptText },
+                      ],
+                    },
                   ],
-                },
-              ],
-            }),
-          }
-        );
+                }),
+              }
+            );
 
-        if (resp.ok) {
-          const data = await resp.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text && text.trim()) {
-            return text.trim();
-          }
+            if (resp.ok) {
+              const data = await resp.json();
+              const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text && text.trim()) {
+                return text.trim();
+              }
+            }
+          } catch {}
         }
       } catch (e) {
         console.warn("[VoiceManager] Gemini Audio transcription failed:", e);
@@ -303,7 +310,7 @@ export class VoiceManager {
         const formData = new FormData();
         formData.append("file", audioBlob, "audio.webm");
         formData.append("model", "whisper-1");
-        formData.append("language", lang);
+        if (lang) formData.append("language", lang);
 
         const resp = await fetch(`${baseUrl.replace(/\/+$/, "")}/audio/transcriptions`, {
           method: "POST",
@@ -323,7 +330,7 @@ export class VoiceManager {
     }
 
     throw new Error(
-      "Səsi mətnə çevirmək üçün Parametrlərdən Gemini, OpenAI və ya Groq API açarı təyin edin."
+      "Səsi mətnə çevirmək üçün Parametrlərdən Gemini, OpenAI və ya Groq API açarı daxil edin."
     );
   }
 

@@ -452,6 +452,40 @@ export class ChatManager {
     this.setState("thinking");
     this.streamingConversations.add(convId);
 
+    // Direct Desktop Command / Tool Intent Interceptor (works seamlessly across all local & cloud models)
+    const directIntent = this.detectDirectDesktopIntent(trimmedContent);
+    if (directIntent) {
+      const chip: ToolChipData = {
+        name: directIntent.toolName,
+        summary: `Running ${directIntent.toolName}...`,
+        status: "executed",
+      };
+      assistantMsg.tool_calls = JSON.stringify([chip]);
+      this.emitMessagesChanged(this.messages);
+
+      const execRes = await toolExecutor.executeToolCall(directIntent.toolName, directIntent.params);
+      let success = execRes.result.success;
+
+      // Fallback to web URL if desktop app wasn't found (e.g. Spotify app not installed)
+      if (!success && directIntent.fallbackUrl) {
+        const fallbackRes = await toolExecutor.executeToolCall("open_url", { url: directIntent.fallbackUrl });
+        success = fallbackRes.result.success;
+      }
+
+      chip.status = success ? "executed" : "failed";
+      chip.summary = success ? execRes.result.summary : (execRes.result.error || "Failed to execute");
+      assistantMsg.tool_calls = JSON.stringify([chip]);
+
+      this.setState("idle");
+      this.streamingConversations.delete(convId);
+      assistantMsg.content = directIntent.responseText;
+      assistantMsg.versions = JSON.stringify([assistantMsg.content]);
+
+      this.finalizeAssistantMessage(assistantMsg, convId);
+      eventBus.emit("pet:action", { type: "state", payload: "happy" });
+      return;
+    }
+
     // Resolve Provider
     if (this.devForceMock) {
       this.provider = new MockAIProvider();
@@ -799,6 +833,156 @@ export class ChatManager {
     } catch {
       return this.messages.map((m) => `**${m.role}**: ${m.content}`).join("\n\n");
     }
+  }
+
+  public detectDirectDesktopIntent(text: string): {
+    toolName: string;
+    params: Record<string, any>;
+    responseText: string;
+    fallbackUrl?: string;
+  } | null {
+    const raw = text.trim();
+    if (!raw) return null;
+
+    // Normalize Azerbaijani / Turkish / Russian / English characters
+    const norm = raw
+      .toLowerCase()
+      .replace(/ə/g, "e")
+      .replace(/ı/g, "i")
+      .replace(/ç/g, "c")
+      .replace(/ş/g, "s")
+      .replace(/ğ/g, "g")
+      .replace(/ö/g, "o")
+      .replace(/ü/g, "u")
+      .replace(/[?!.,]/g, "")
+      .trim();
+
+    // 1. Google
+    if (
+      norm.includes("google") &&
+      (norm.includes("ac") || norm.includes("open") || norm.includes("axtar") || norm.includes("search") || norm.includes("otkroy") || norm.includes("baslat"))
+    ) {
+      return {
+        toolName: "open_url",
+        params: { url: "https://www.google.com" },
+        responseText: "Google brauzerdə açıldı.",
+      };
+    }
+
+    // 2. Spotify
+    if (
+      norm.includes("spotify") &&
+      (norm.includes("ac") || norm.includes("open") || norm.includes("otkroy") || norm.includes("baslat") || norm.includes("islet"))
+    ) {
+      return {
+        toolName: "open_app",
+        params: { name: "Spotify" },
+        fallbackUrl: "https://open.spotify.com",
+        responseText: "Spotify başladıldı.",
+      };
+    }
+
+    // 3. YouTube
+    if (
+      norm.includes("youtube") &&
+      (norm.includes("ac") || norm.includes("open") || norm.includes("otkroy") || norm.includes("baslat"))
+    ) {
+      return {
+        toolName: "open_url",
+        params: { url: "https://www.youtube.com" },
+        responseText: "YouTube brauzerdə açıldı.",
+      };
+    }
+
+    // 4. GitHub
+    if (
+      norm.includes("github") &&
+      (norm.includes("ac") || norm.includes("open") || norm.includes("otkroy") || norm.includes("baslat"))
+    ) {
+      return {
+        toolName: "open_url",
+        params: { url: "https://github.com" },
+        responseText: "GitHub açıldı.",
+      };
+    }
+
+    // 5. Calculator
+    if (
+      (norm.includes("kalkulyator") || norm.includes("calculator")) &&
+      (norm.includes("ac") || norm.includes("open") || norm.includes("otkroy") || norm.includes("baslat"))
+    ) {
+      return {
+        toolName: "open_app",
+        params: { name: "Calculator" },
+        responseText: "Kalkulyator açıldı.",
+      };
+    }
+
+    // 6. Notepad
+    if (
+      (norm.includes("notepad") || norm.includes("bloknot")) &&
+      (norm.includes("ac") || norm.includes("open") || norm.includes("otkroy") || norm.includes("baslat"))
+    ) {
+      return {
+        toolName: "open_app",
+        params: { name: "Notepad" },
+        responseText: "Notepad açıldı.",
+      };
+    }
+
+    // 7. Timer / Pomodoro
+    if (norm.includes("taymer") || norm.includes("timer") || norm.includes("pomodoro")) {
+      const matchMin = norm.match(/(\d+)\s*(?:deq|daq|min|m)/i) || norm.match(/(\d+)/);
+      const minutes = matchMin ? parseInt(matchMin[1], 10) : 25;
+      return {
+        toolName: "start_timer",
+        params: { minutes, mode: "countdown", label: "Focus Session" },
+        responseText: `${minutes} dəqiqəlik taymer başladıldı!`,
+      };
+    }
+
+    // 8. Time / Date
+    if (
+      norm.includes("saat necedir") ||
+      norm.includes("vaxt necedir") ||
+      norm.includes("what time") ||
+      norm.includes("current time") ||
+      norm.includes("skolko vremeni")
+    ) {
+      return {
+        toolName: "get_time_and_date",
+        params: {},
+        responseText: `Cari vaxt: ${new Date().toLocaleTimeString("az-AZ", { hour: "2-digit", minute: "2-digit" })}`,
+      };
+    }
+
+    // 9. Generic URL open
+    const urlMatch = raw.match(/https?:\/\/[^\s]+/);
+    if (urlMatch && (norm.includes("ac") || norm.includes("open"))) {
+      return {
+        toolName: "open_url",
+        params: { url: urlMatch[0] },
+        responseText: `${urlMatch[0]} açıldı.`,
+      };
+    }
+
+    // 10. Generic "[app] ac" or "open [app]"
+    const openAppMatch =
+      norm.match(/(?:ac|open|otkroy|launch)\s+([a-z0-9_-]+)/i) ||
+      norm.match(/([a-z0-9_-]+)(?:-i|-u|-ı|-ü)?\s+(?:ac|open|otkroy)/i);
+    if (openAppMatch && openAppMatch[1]) {
+      const candidate = openAppMatch[1].trim();
+      const skipWords = ["bu", "bir", "the", "a", "an", "ses", "chat", "sohbet", "qapi", "pencere"];
+      if (!skipWords.includes(candidate) && candidate.length >= 3) {
+        return {
+          toolName: "open_app",
+          params: { name: candidate },
+          responseText: `${candidate} açılır...`,
+        };
+      }
+    }
+
+    return null;
   }
 }
 

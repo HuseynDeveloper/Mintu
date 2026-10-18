@@ -210,6 +210,7 @@ class MintuApp {
         this.freeAnimController.setAccessory(acc as any);
       },
       onToggleHitOverlay: () => this.hitTester.toggleDebugOverlay(),
+      onToggleSlotOverlay: () => this.islandController.el.classList.toggle("island-debug-slots"),
       onForceLeaveIsland: () => this.leaveIsland(),
       onForceEnterIsland: () => this.enterIslandDirectly(),
     });
@@ -549,6 +550,16 @@ class MintuApp {
           this.freeAnimController.setState(act.payload);
         }
       }
+    });
+
+    eventBus.on("island:notification-appeared", (data) => {
+      this.islandBehaviorScheduler.onNotificationAppeared(data.isFocusMode);
+      this.freeBehaviorScheduler.onNotificationAppeared(data.isFocusMode);
+    });
+
+    eventBus.on("island:notification-dismissed", () => {
+      this.islandBehaviorScheduler.onNotificationDismissed();
+      this.freeBehaviorScheduler.onNotificationDismissed();
     });
 
     appBridge.listenToEvent<string>("pet-say", (text) => {

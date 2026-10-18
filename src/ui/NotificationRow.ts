@@ -57,61 +57,72 @@ export class NotificationRow {
     }
 
     if (mode === "island-inside") {
-      // Mintu is inside: left anchor belongs ONLY to Mintu's pet avatar.
-      // Layout: [Mintu avatar] -> [Source badge: 1 icon + app name] -> [Text: title + subtitle] -> [Actions / Dismiss]
+      // Mintu is inside: reserved 52px mintuSlot guarantees Mintu never overlaps the source badge.
+      // Layout: [mintuSlot] -> [Source badge: 1 icon + app name] -> [Text: title + subtitle] -> [Actions] -> [Dismiss]
       container.innerHTML = `
-        <div class="notif-header">
-          <div class="notif-source-badge" title="${appName}">
-            <div class="notif-app-icon">${iconHtml}</div>
-            <span class="notif-app-label">${appName}</span>
+        <div class="island-layout has-mintu-slot">
+          <div class="island-slot-mintu" data-slot="mintuSlot"></div>
+          <div class="island-slot-content" data-slot="content">
+            <div class="notif-header" style="display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0;">
+              <div class="notif-source-badge" title="${appName}">
+                <div class="notif-app-icon">${iconHtml}</div>
+                <span class="notif-app-label">${appName}</span>
+              </div>
+              <div class="notif-text-col" style="min-width: 0; flex: 1;">
+                <div class="notif-title" title="${titleText}">${titleText}</div>
+                <div class="notif-subtitle" title="${subText}">${subText}</div>
+              </div>
+            </div>
+            <div class="notif-actions" style="display: ${payload.actions && payload.actions.length > 0 ? "flex" : "none"};">
+              ${(payload.actions || [])
+                .map(
+                  (act) => `
+                <button class="notif-btn ${act.primary ? "primary" : "secondary"}" data-action-id="${act.id}">
+                  ${act.label}
+                </button>
+              `
+                )
+                .join("")}
+            </div>
           </div>
-          <div class="notif-text-col" style="min-width: 0; flex: 1;">
-            <div class="notif-title" title="${titleText}">${titleText}</div>
-            <div class="notif-subtitle" title="${subText}">${subText}</div>
-          </div>
-          <div class="notif-right-slot">
+          <div class="island-slot-trailing" data-slot="trailing">
             <button class="notif-dismiss-btn" id="notif-dismiss-btn" title="Dismiss" aria-label="Dismiss notification">✕</button>
           </div>
         </div>
-        <div class="notif-actions" style="display: ${payload.actions && payload.actions.length > 0 ? "flex" : "none"};">
-          ${(payload.actions || [])
-            .map(
-              (act) => `
-            <button class="notif-btn ${act.primary ? "primary" : "secondary"}" data-action-id="${act.id}">
-              ${act.label}
-            </button>
-          `
-            )
-            .join("")}
-        </div>
       `;
     } else if (mode === "island-outside") {
-      // Mintu is outside: left anchor holds the single large source icon (28-32px).
-      // Badge inside text header is omitted so there is STILL exactly one icon!
+      // Mintu is outside roaming: mintuSlot is omitted, content takes the left edge with no leftover gap.
+      // The single large source icon (28-32px) sits on the left edge.
       container.innerHTML = `
-        <div class="notif-outside-layout" style="display: flex; align-items: center; gap: 10px; width: 100%;">
-          <div class="notif-large-icon-anchor" style="width: 30px; height: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-            ${iconHtml}
-          </div>
-          <div class="notif-text-col" style="min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="notif-app-label">${appName}</span>
+        <div class="island-layout mintu-less">
+          <div class="island-slot-content" data-slot="content">
+            <div class="notif-outside-layout" style="display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0;">
+              <div class="notif-large-icon-anchor" style="width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                ${iconHtml}
+              </div>
+              <div class="notif-text-col" style="min-width: 0; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="notif-app-label">${appName}</span>
+                </div>
+                <div class="notif-title" title="${titleText}">${titleText}</div>
+                <div class="notif-subtitle" title="${subText}">${subText}</div>
+              </div>
             </div>
-            <div class="notif-title" title="${titleText}">${titleText}</div>
-            <div class="notif-subtitle" title="${subText}">${subText}</div>
+            <div class="notif-actions" style="display: ${payload.actions && payload.actions.length > 0 ? "flex" : "none"};">
+              ${(payload.actions || [])
+                .map(
+                  (act) => `
+                <button class="notif-btn ${act.primary ? "primary" : "secondary"}" data-action-id="${act.id}">
+                  ${act.label}
+                </button>
+              `
+                )
+                .join("")}
+            </div>
           </div>
-          <button class="notif-dismiss-btn" id="notif-dismiss-btn" title="Dismiss" aria-label="Dismiss notification">✕</button>
-        </div>
-        <div class="notif-actions" style="display: ${payload.actions && payload.actions.length > 0 ? "flex" : "none"};">
-          ${(payload.actions || [])
-            .map(
-              (act) => `
-            <button class="notif-btn ${act.primary ? "primary" : "secondary"}" data-action-id="${act.id}">
-              ${act.label}
-            </button>
-          `
-            )
-            .join("")}
+          <div class="island-slot-trailing" data-slot="trailing">
+            <button class="notif-dismiss-btn" id="notif-dismiss-btn" title="Dismiss" aria-label="Dismiss notification">✕</button>
+          </div>
         </div>
       `;
     } else if (mode === "free-card") {

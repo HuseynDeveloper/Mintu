@@ -275,22 +275,23 @@ export class IslandContentRenderer {
             <button class="btn-update-close" id="btn-mintu-update-close">✕</button>
           </div>
 
-          <!-- Image B Greeting row -->
-          <div class="expanded-greeting-row">
-            <div class="greeting-heading">How can I<br/>help you?</div>
-          </div>
-
-          <!-- Message list container -->
+          <!-- Scrollable chat body containing greeting, messages, and suggestions -->
           <div class="chat-messages-scroll-area">
-            <div class="chat-messages-container"></div>
-          </div>
+            <!-- Image B Greeting row -->
+            <div class="expanded-greeting-row">
+              <div class="greeting-heading">How can I help you?</div>
+            </div>
 
-          <!-- Image B Suggestion chips row -->
-          <div class="expanded-chips-row">
-            <button class="chip-btn" data-chip="Check Tasks">Check Tasks</button>
-            <button class="chip-btn" data-chip="Ask AI">Ask AI</button>
-            <button class="chip-btn" data-chip="Explain code">Explain code</button>
-            <button class="chip-btn" data-chip="Tell a joke">Tell a joke</button>
+            <!-- Message list container -->
+            <div class="chat-messages-container"></div>
+
+            <!-- Image B Suggestion chips row -->
+            <div class="expanded-chips-row">
+              <button class="chip-btn" data-chip="Check Tasks">Check Tasks</button>
+              <button class="chip-btn" data-chip="Ask AI">Ask AI</button>
+              <button class="chip-btn" data-chip="Explain code">Explain code</button>
+              <button class="chip-btn" data-chip="Tell a joke">Tell a joke</button>
+            </div>
           </div>
 
           <!-- Input row (Image E 3) -->
@@ -2516,7 +2517,6 @@ export class IslandContentRenderer {
     };
 
     // Listen to AI state
-    let prevAiState = "idle";
     chatManager.onStateChanged = (state) => {
       if (state === "streaming" || state === "thinking") {
         this.sendBtnEl.style.display = "none";
@@ -2525,16 +2525,8 @@ export class IslandContentRenderer {
         this.sendBtnEl.style.display = "flex";
         this.stopBtnEl.style.display = "none";
 
-        // Milestone 7: Speak assistant answer if TTS is enabled
-        if (prevAiState === "streaming" && state === "idle") {
-          const msgs = chatManager.getMessages();
-          const lastMsg = msgs[msgs.length - 1];
-          if (lastMsg && lastMsg.role === "assistant" && lastMsg.content) {
-            voiceManager.speak(lastMsg.content);
-          }
-        }
+        // Assistant auto-read is disabled by user preference
       }
-      prevAiState = state;
     };
 
     // Milestone 7: Enriched System Tray Action listeners

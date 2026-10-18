@@ -10,6 +10,7 @@ import { AnimationController } from "../pet/AnimationController";
 import { IslandContentRenderer, NotificationPayload } from "./IslandContent";
 import { eventBus } from "../core/EventBus";
 import { appBridge } from "../core/AppBridge";
+import { timerEngine } from "../modules/timer/TimerEngine";
 
 export interface IslandDimensions {
   width: number;
@@ -25,7 +26,7 @@ export const IslandDimensionsPresets: Record<string, IslandDimensions> = {
   "empty-pill": { width: 88, height: 26, radius: 13 },
   notification: { width: 376, height: 58, radius: 29 },
   "notification-actions": { width: 376, height: 114, radius: 28 },
-  expanded: { width: 360, height: 260, radius: 28 },
+  expanded: { width: 390, height: 400, radius: 28 },
   "expanded-large": { width: 440, height: 440, radius: 26 },
   timer: { width: 340, height: 54, radius: 27 },
   music: { width: 348, height: 58, radius: 28 },
@@ -196,6 +197,10 @@ export class IslandController {
       appBridge.focusMainWindow();
     }
 
+    if (prev.startsWith("notification") && !name.startsWith("notification")) {
+      eventBus.emit("island:notification-dismissed", {});
+    }
+
     eventBus.emit("island:state-change", { from: prev, to: name });
   }
 
@@ -208,6 +213,7 @@ export class IslandController {
     const targetState = hasActions ? "notification-actions" : "notification";
 
     this.setState(targetState);
+    eventBus.emit("island:notification-appeared", { isFocusMode: timerEngine.isFocusModeActive() });
 
     // Auto-dismiss after 6.5s if not clicked
     this.notifTimeout = window.setTimeout(() => {

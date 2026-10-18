@@ -9,6 +9,24 @@ export function getAppIconSvg(appName?: string, fallbackIcon?: string): string {
   }
   const norm = (appName || "").toLowerCase();
 
+  if (norm.includes("antigravity")) {
+    return `
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <rect width="24" height="24" rx="6" fill="#18181B" stroke="rgba(255,255,255,0.15)" stroke-width="1" />
+        <path d="M12 5L6 17h3.5l1.3-2.8h4.4L16.5 17H20L14 5h-2zm0 4.2l1.6 3.6h-3.2L12 9.2z" fill="#A8E8D5" />
+      </svg>
+    `;
+  }
+
+  if (norm.includes("powershell") || norm.includes("terminal") || norm.includes("console")) {
+    return `
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <rect width="24" height="24" rx="6" fill="#012456" />
+        <path d="M6.5 8.5L10 12l-3.5 3.5 1.2 1.2 4.7-4.7-4.7-4.7-1.2 1.2zm6 7.5h5v1.5h-5V16z" fill="#FFFFFF" />
+      </svg>
+    `;
+  }
+
   if (norm.includes("discord")) {
     return `
       <svg viewBox="0 0 24 24" width="22" height="22">

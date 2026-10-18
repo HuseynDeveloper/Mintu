@@ -22,6 +22,8 @@ export type MintuEventMap = {
     actions?: Array<{ id: string; label: string; primary?: boolean }>;
   };
   "island:notification-action": { actionId: string };
+  "island:notification-appeared": { isFocusMode: boolean };
+  "island:notification-dismissed": Record<string, any>;
   "island:content-change": { slot: string };
   "island:request-state": string;
 

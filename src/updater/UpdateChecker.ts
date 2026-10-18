@@ -16,7 +16,7 @@ export interface UpdateInfo {
 
 export class UpdateChecker {
   public static readonly CURRENT_VERSION = "0.1.2";
-  public static readonly GITHUB_REPO = "TalibliTural/Mintu";
+  public static readonly GITHUB_REPO = "HuseynDeveloper/Mintu";
 
   private lastCheckTime: number = 0;
   private cachedUpdate: UpdateInfo | null = null;
@@ -51,6 +51,19 @@ export class UpdateChecker {
         Accept: "application/vnd.github.v3+json",
       },
     });
+
+    if (resp.status === 404) {
+      const current = UpdateChecker.CURRENT_VERSION;
+      const result: UpdateInfo = {
+        available: false,
+        currentVersion: current,
+        latestVersion: current,
+        releaseUrl: `https://github.com/${UpdateChecker.GITHUB_REPO}/releases`,
+        releaseNotes: "Mintu ən son versiyadadır.",
+      };
+      this.cachedUpdate = result;
+      return result;
+    }
 
     if (!resp.ok) {
       throw new Error(`GitHub API returned status ${resp.status}`);

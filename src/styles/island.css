@@ -138,6 +138,97 @@ body {
   justify-content: center;
 }
 
+/* Shared Island Layout System (Image D / K layout) */
+.island-layout {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.island-slot-mintu {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  height: 100%;
+  flex-shrink: 0;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.island-slot-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.island-slot-trailing {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: 8px;
+}
+
+/* Mintu-less layout (when roaming outside) */
+.island-layout.mintu-less .island-slot-mintu {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+}
+
+.island-layout.mintu-less {
+  padding-left: 0;
+}
+
+/* Developer Slot Debug Overlay (Ctrl+Shift+D) */
+.island-debug-slots .island-slot-mintu {
+  outline: 1.5px dashed #10b981 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  position: relative;
+}
+
+.island-debug-slots .island-slot-mintu::after {
+  content: "mintuSlot: 52px";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 8px;
+  color: #10b981;
+  font-family: monospace;
+  pointer-events: none;
+}
+
+.island-debug-slots .island-slot-content {
+  outline: 1.5px dashed #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+  position: relative;
+}
+
+.island-debug-slots .island-slot-content::after {
+  content: "content";
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 8px;
+  color: #38bdf8;
+  font-family: monospace;
+  pointer-events: none;
+}
+
+.island-debug-slots .island-slot-trailing {
+  outline: 1.5px dashed #f59e0b !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+}
+
+.island-debug-slots .mintu-pet-container.pill-mode {
+  outline: 1.5px solid #ec4899 !important;
+}
+
 /* Slot 1: Collapsed */
 .slot-collapsed {
   justify-content: space-between;
@@ -390,24 +481,27 @@ body {
 
 /* Image B Greeting Row */
 .expanded-greeting-row {
-  margin: 14px 0 10px 4px;
+  margin: 8px 0 6px 4px;
+  flex-shrink: 0;
 }
 
 .greeting-heading {
   color: #ffffff;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
 }
 
 /* Chat Messages Scroll Area */
 .chat-messages-scroll-area {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
-  padding: 8px 4px 10px 0;
+  padding: 4px 4px 6px 0;
   scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-messages-scroll-area::-webkit-scrollbar {
@@ -879,8 +973,8 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: auto;
-  margin-bottom: 10px;
+  margin-top: 10px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 

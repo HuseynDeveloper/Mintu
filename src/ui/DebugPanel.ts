@@ -18,6 +18,7 @@ export interface DebugPanelDelegate {
   onToggleMode: (mode: "island" | "free") => void;
   onSetAccessory: (acc: string) => void;
   onToggleHitOverlay?: () => void;
+  onToggleSlotOverlay?: () => void;
   onForceLeaveIsland?: () => void;
   onForceEnterIsland?: () => void;
   onSimulateContext?: (type: "code" | "translate" | "image" | "blocked") => void;
@@ -164,6 +165,7 @@ export class DebugPanel {
           <div class="debug-section-title">Diagnostics & Mock Server</div>
           <div class="debug-btn-grid">
             <button data-diag="hit-overlay">Toggle Hit Overlay</button>
+            <button data-diag="slot-overlay">Toggle Slot Layout</button>
             <button data-diag="mock-download">Mock DL Server</button>
             <button data-diag="clear-cache">Reset Consent</button>
             <button data-diag="force-ai-msg">Test AI Prompt</button>
@@ -247,11 +249,13 @@ export class DebugPanel {
 
           <div class="debug-section-title" style="margin-top: 8px;">Fake Notification Generator (Image K Fix)</div>
           <div class="debug-btn-grid">
+            <button data-m6="notif-antigravity">Antigravity Permission Toast</button>
             <button data-m6="notif-ps">PowerShell Toast</button>
             <button data-m6="notif-discord">Discord Mention</button>
             <button data-m6="notif-telegram">Telegram Message</button>
             <button data-m6="notif-chrome">Chrome Download</button>
             <button data-m6="notif-model">Mintu Model Ready</button>
+            <button data-m6="notif-stress">Stress Long Title/Sub</button>
           </div>
         </div>
       </div>
@@ -352,6 +356,10 @@ export class DebugPanel {
       } else if (btn.dataset.diag === "hit-overlay") {
         if (this.delegate.onToggleHitOverlay) {
           this.delegate.onToggleHitOverlay();
+        }
+      } else if (btn.dataset.diag === "slot-overlay") {
+        if (this.delegate.onToggleSlotOverlay) {
+          this.delegate.onToggleSlotOverlay();
         }
       } else if (btn.dataset.diag === "mock-download") {
         import("../ai/ModelManager").then(({ modelManager }) => {
@@ -499,6 +507,20 @@ export class DebugPanel {
           (document.body.style as any).zoom = "150%";
         } else if (action === "zoom-200") {
           (document.body.style as any).zoom = "200%";
+        } else if (action === "notif-antigravity") {
+          activityManager.push({
+            id: "notif_ag_" + Date.now(),
+            type: "urgent_notif",
+            islandState: "notification",
+            petState: "alert",
+            payload: {
+              appName: "ANTIGRAVITY",
+              title: "Requesting your permission:",
+              text: "git ls-files | Select-String -Pattern ...",
+              appIcon: "antigravity",
+            },
+            autoDismissMs: 8000,
+          });
         } else if (action === "notif-ps") {
           activityManager.push({
             id: "notif_ps_" + Date.now(),
@@ -568,6 +590,20 @@ export class DebugPanel {
               appIcon: "internal",
             },
             autoDismissMs: 7000,
+          });
+        } else if (action === "notif-stress") {
+          activityManager.push({
+            id: "notif_stress_" + Date.now(),
+            type: "urgent_notif",
+            islandState: "notification",
+            petState: "alert",
+            payload: {
+              appName: "SystemAdministratorNotificationCenterService",
+              title: "Very Long Notification Title Exceeding Ordinary Window Dimensions And Layout Width Limits",
+              text: "Detailed explanation and subtitle string with deeply nested diagnostic stack trace information verifying ellipsis truncation without overflow or clipping.",
+              appIcon: "chrome",
+            },
+            autoDismissMs: 8000,
           });
         }
       }

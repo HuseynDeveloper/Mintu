@@ -37,7 +37,7 @@
 /* Mode 1: Pill Mode (inside dynamic island) */
 .mintu-pet-container.pill-mode {
   position: absolute;
-  left: 8px;
+  left: 6px;
   top: 50%;
   transform: translateY(-50%);
   width: 42px;
@@ -46,13 +46,14 @@
   pointer-events: none;
 }
 
-/* In expanded AI slot, pet is larger at top-left */
-.mintu-island[style*="height: 280"] .mintu-pet-container.pill-mode,
+/* In expanded AI slot, pet sits neatly inside the expanded top bar */
+.mintu-island.expanded .mintu-pet-container.pill-mode,
 .slot-expanded.active ~ .mintu-pet-container.pill-mode {
-  left: 20px;
-  top: 48px;
-  width: 64px;
-  height: 64px;
+  left: 16px;
+  top: 18px;
+  transform: none;
+  width: 44px;
+  height: 44px;
 }
 
 /* Mode 2: Full Mode (Desktop Free Mode) */
