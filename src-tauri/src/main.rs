@@ -57,7 +57,8 @@ fn main() {
             info.location(),
             std::backtrace::Backtrace::capture()
         );
-        let _ = std::fs::write("c:/Users/TT_S/OneDrive/Desktop/Mintu/app_startup.log", log_msg);
+        let log_path = std::env::temp_dir().join("mintu_startup.log");
+        let _ = std::fs::write(log_path, log_msg);
     }));
 
     mintu_lib::run();

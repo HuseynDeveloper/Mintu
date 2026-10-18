@@ -385,7 +385,7 @@ export class DebugPanel {
           } else if (sim === "open-url") {
             toolExecutor.executeToolCall("open_url", { url: "https://github.com" });
           } else if (sim === "recycle") {
-            toolExecutor.executeToolCall("move_to_recycle_bin", { path: "C:\\Users\\TT_S\\OneDrive\\Desktop\\Mintu\\scratch_test.txt" });
+            toolExecutor.executeToolCall("move_to_recycle_bin", { path: "scratch_test.txt" });
           } else if (sim === "cloud-consent") {
             eventBus.emit("island:request-state", "cloud-consent");
           }

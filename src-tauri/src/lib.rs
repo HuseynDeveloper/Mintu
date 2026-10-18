@@ -26,7 +26,8 @@ use storage::{Conversation, MessageRecord, StorageManager};
 
 pub fn log_step(msg: &str) {
     use std::io::Write;
-    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("c:/Users/TT_S/OneDrive/Desktop/Mintu/app_startup.log") {
+    let log_path = std::env::temp_dir().join("mintu_startup.log");
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(log_path) {
         let _ = writeln!(f, "[{:?}] {}", std::time::SystemTime::now(), msg);
     }
 }
@@ -1349,7 +1350,8 @@ pub fn run() {
 
     crate::log_step("Calling builder.run()...");
     if let Err(e) = builder.run(tauri::generate_context!()) {
-        let _ = std::fs::write("c:/Users/TT_S/OneDrive/Desktop/Mintu/app_startup.log", format!("RUN ERROR: {e}\n"));
+        let log_path = std::env::temp_dir().join("mintu_startup.log");
+        let _ = std::fs::write(log_path, format!("RUN ERROR: {e}\n"));
         panic!("error while running mintu application: {e}");
     }
     crate::log_step("builder.run() returned cleanly.");

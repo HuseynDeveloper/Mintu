@@ -36,7 +36,7 @@ Mintu masaüstü proqramından tamamilə təcrid olunmuş şəkildə hazırlanm�
 4. Yuxarı solda çıxan **"Load unpacked"** düyməsinə klikləyin.
 5. Açılan qovluq pəncərəsində bu qovluğu seçin:
    ```text
-   c:\Users\TT_S\OneDrive\Desktop\Mintu\chrome-extension
+   Mintu layihəsinin içindəki "chrome-extension" qovluğu
    ```
 6. **Mintu — Living Companion** dərhal Chrome genişlənmələri sırasına əlavə olunacaq.
 

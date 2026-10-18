@@ -319,7 +319,7 @@ export class MockAIProvider implements AIProvider {
       if (prompt.includes("fayl") || prompt.includes("hardadi") || prompt.includes("yer")) {
         return {
           emotion: "happy",
-          text: `**Mintu Fayllarının Yeri:**\n\n- **Mintu Proqramı:** \`C:\\Users\\TT_S\\OneDrive\\Desktop\\Mintu\\mintu.exe\`\n- **Data və Modellər Qovluğu:** \`%APPDATA%\\com.mintu.desktop\\models\`\n- **Söhbət Tarixçəsi (SQLite):** \`%APPDATA%\\com.mintu.desktop\\mintu.db\`\n\nHər hansı GGUF modelini yükləyəndə avtomatik həmin models qovluğuna yazılır!`,
+          text: `**Mintu Fayllarının Yeri:**\n\n- **Mintu Proqramı:** \`mintu.exe\` (Qovluğunuzdakı icra faylı)\n- **Data və Modellər Qovluğu:** \`%APPDATA%\\com.mintu.desktop\\models\`\n- **Söhbət Tarixçəsi (SQLite):** \`%APPDATA%\\com.mintu.desktop\\mintu.db\`\n\nHər hansı GGUF modelini yükləyəndə avtomatik həmin models qovluğuna yazılır!`,
         };
       }
 
