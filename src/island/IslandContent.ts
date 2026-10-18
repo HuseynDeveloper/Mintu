@@ -578,7 +578,7 @@ export class IslandContentRenderer {
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <div>
-                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;">Mintu Version v0.1.2</div>
+                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;">Mintu Version v0.2.0</div>
                     <div class="setting-hint" id="settings-updater-status">Up to date with GitHub Releases.</div>
                   </div>
                   <button class="btn-small-action" id="btn-check-updates-now" style="font-size: 11px; height: 28px;">Check Updates</button>
@@ -1802,7 +1802,7 @@ export class IslandContentRenderer {
             updateBanner.style.display = "flex";
           }
         } else {
-          if (updaterStatusHint) updaterStatusHint.textContent = "Mintu ən son versiyadadır (v0.1.2).";
+          if (updaterStatusHint) updaterStatusHint.textContent = `Mintu ən son versiyadadır (v${updateChecker.getCurrentVersion()}).`;
           eventBus.emit("pet:say", { text: "Mintu artıq ən son versiyadadır!" });
         }
       } catch {

@@ -1,4 +1,4 @@
-# Mintu (みんと) 🍃
+# Mintu (みんと)
 
 > A living desktop companion with a Dynamic Island, local AI, and ambient context awareness, built with Tauri 2, Rust, Vite & TypeScript.
 
