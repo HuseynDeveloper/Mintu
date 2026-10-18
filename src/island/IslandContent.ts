@@ -304,13 +304,25 @@ export class IslandContentRenderer {
                 </div>
               </div>
               <div class="onboard-subtitle" id="hw-telemetry-text">Your PC: 16 GB RAM, 8 cores</div>
+              <!-- Storage Drive Selector (Milestone 6) -->
+              <div class="onboard-storage-box" id="onboard-storage-box" style="margin-top: 8px; padding: 6px 10px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="font-weight: 500; color: #9CA3AF;">Download Drive & Folder:</span>
+                  <span id="onboard-storage-free-badge" style="color: #34D399; font-weight: 600;">-- GB free</span>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <input type="text" class="chat-text-input" id="onboard-storage-path-input" style="flex: 1; height: 26px; font-size: 11px; padding: 2px 8px;" readonly />
+                  <button class="btn-small-action" id="btn-onboard-browse-storage" style="padding: 2px 10px; height: 26px; font-size: 11px; white-space: nowrap;">Browse...</button>
+                </div>
+                <div id="onboard-quick-drives" style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;"></div>
+              </div>
             </div>
 
             <div class="onboard-glass-card">
               <div class="onboard-card-tag" id="onboard-rec-badge">Recommended: Medium model 2.0 GB</div>
               <div class="onboard-illustration-row">
                 <div class="onboard-mintu-magnifying">
-                  <svg viewBox="0 0 80 80" width="76" height="76">
+                  <svg viewBox="0 0 80 80" width="56" height="56">
                     <ellipse cx="36" cy="48" rx="22" ry="20" fill="#A8E8D5" stroke="#2D5A4C" stroke-width="2.5" />
                     <path d="M22 32 C18 18, 26 14, 30 26" fill="#A8E8D5" stroke="#2D5A4C" stroke-width="2.5" stroke-linejoin="round" />
                     <path d="M42 28 C46 14, 54 18, 48 32" fill="#A8E8D5" stroke="#2D5A4C" stroke-width="2.5" stroke-linejoin="round" />
@@ -477,6 +489,29 @@ export class IslandContentRenderer {
                   <option value="on">Enabled</option>
                 </select>
                 <div class="setting-hint">Enables Ctrl+Shift+D debug overlay and hit-test visualizer.</div>
+              </div>
+
+              <div class="setting-item">
+                <label class="input-label">Local Model Storage & Disk Drive</label>
+                <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); font-size: 11px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #9CA3AF;">Active Storage:</span>
+                    <span id="settings-storage-free-badge" style="color: #34D399; font-weight: 600;">-- GB free</span>
+                  </div>
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="text" class="chat-text-input" id="settings-storage-path-input" style="flex: 1; height: 28px; font-size: 11px; padding: 2px 8px;" />
+                    <button class="btn-small-action" id="btn-settings-browse-storage" style="height: 28px; font-size: 11px; white-space: nowrap;">Browse...</button>
+                    <button class="btn-small-action" id="btn-settings-save-storage" style="height: 28px; font-size: 11px; white-space: nowrap;">Apply</button>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                    <label style="display: flex; align-items: center; gap: 5px; color: #9CA3AF; font-size: 10.5px; cursor: pointer;">
+                      <input type="checkbox" id="settings-storage-move-existing" style="accent-color: #34D399;" />
+                      Move existing models to new folder to free up space
+                    </label>
+                  </div>
+                  <div id="settings-quick-drives" style="display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap;"></div>
+                  <div class="setting-hint" id="settings-storage-hint">Choose any drive (e.g. D:\Mintu-Models) to save models offline without filling C: disk.</div>
+                </div>
               </div>
 
               <div class="setting-item">
@@ -1339,6 +1374,37 @@ export class IslandContentRenderer {
       }
     });
 
+    // Model Storage Browse & Save Handlers (Milestone 6)
+    const browseSettingsBtn = this.slotExpanded.querySelector("#btn-settings-browse-storage");
+    browseSettingsBtn?.addEventListener("click", async () => {
+      const picked = await modelManager.browseModelsDir();
+      if (picked) {
+        const input = this.slotExpanded.querySelector("#settings-storage-path-input") as HTMLInputElement;
+        if (input) input.value = picked;
+        const moveCheck = this.slotExpanded.querySelector("#settings-storage-move-existing") as HTMLInputElement;
+        await modelManager.setModelsDir(picked, moveCheck ? moveCheck.checked : false);
+        await this.refreshStorageUI();
+        this.populateModelSelects();
+        eventBus.emit("pet:say", { text: `Model storage set to ${picked}` });
+      }
+    });
+
+    const saveSettingsStorageBtn = this.slotExpanded.querySelector("#btn-settings-save-storage");
+    saveSettingsStorageBtn?.addEventListener("click", async () => {
+      const input = this.slotExpanded.querySelector("#settings-storage-path-input") as HTMLInputElement;
+      const moveCheck = this.slotExpanded.querySelector("#settings-storage-move-existing") as HTMLInputElement;
+      if (input && input.value.trim()) {
+        try {
+          await modelManager.setModelsDir(input.value.trim(), moveCheck ? moveCheck.checked : false);
+          await this.refreshStorageUI();
+          this.populateModelSelects();
+          eventBus.emit("pet:say", { text: "Storage location updated!" });
+        } catch (err: any) {
+          alert(`Failed to set directory: ${err}`);
+        }
+      }
+    });
+
     const viewLogsBtn = this.slotExpanded.querySelector("#btn-refresh-audit-logs");
     const clearLogsBtn = this.slotExpanded.querySelector("#btn-clear-audit-logs");
     const auditLogsCard = this.slotExpanded.querySelector("#settings-audit-logs-card") as HTMLElement;
@@ -1497,6 +1563,13 @@ export class IslandContentRenderer {
         const isHidden = pickerSection.style.display === "none";
         pickerSection.style.display = isHidden ? "block" : "none";
         chooseAnotherBtn.textContent = isHidden ? "Hide choices" : "Choose another";
+        this.updateCardDimensions();
+        if (isHidden) {
+          setTimeout(() => {
+            const startBtn = this.slotExpanded.querySelector("#btn-start-download");
+            startBtn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }, 80);
+        }
       }
     });
 
@@ -1508,6 +1581,17 @@ export class IslandContentRenderer {
       const modelId = this.currentDownloadingModelId || (select && select.value) || (rec?.id || "qwen2.5-1.5b-instruct");
       await modelManager.cancelDownload(modelId);
       this.resetDownloadProgressUi();
+    });
+
+    // Onboarding Storage Browse Handler (Milestone 6)
+    const browseOnboardBtn = this.slotExpanded.querySelector("#btn-onboard-browse-storage");
+    browseOnboardBtn?.addEventListener("click", async () => {
+      const picked = await modelManager.browseModelsDir();
+      if (picked) {
+        await modelManager.setModelsDir(picked, false);
+        await this.refreshStorageUI();
+        eventBus.emit("pet:say", { text: `Download folder set to ${picked}` });
+      }
     });
 
     // Start download button with pre-flight check (Image H)
@@ -1531,7 +1615,8 @@ export class IslandContentRenderer {
 
       const hw = await modelManager.detectHardware();
       if (spec && hw.free_disk_mb * 1024 * 1024 < spec.size_bytes + 200_000_000) {
-        alert(`Not enough free disk space! ${(hw.free_disk_mb / 1024).toFixed(1)} GB available, but model requires ${(spec.size_bytes / (1024 * 1024 * 1024)).toFixed(1)} GB + 200 MB buffer.`);
+        const curDir = await modelManager.getModelsDir();
+        alert(`Not enough free disk space on ${curDir}! ${(hw.free_disk_mb / 1024).toFixed(1)} GB available, but model requires ${(spec.size_bytes / (1024 * 1024 * 1024)).toFixed(1)} GB. Please choose D: drive or another folder with more space.`);
         return;
       }
       this.currentDownloadingModelId = modelId;
@@ -2035,6 +2120,7 @@ export class IslandContentRenderer {
     await modelManager.loadCatalog();
     const hw = await modelManager.detectHardware();
     await modelManager.refreshInstalledModels();
+    await this.refreshStorageUI();
 
     // Sync conversations list
     chatManager.onConversationsChanged = () => {
@@ -2339,6 +2425,116 @@ export class IslandContentRenderer {
     }
   }
 
+  public async refreshStorageUI(): Promise<void> {
+    try {
+      const currentDir = await modelManager.getModelsDir();
+      const hw = await modelManager.detectHardware();
+      const disks = await modelManager.getAvailableDisks();
+
+      const freeGb = (hw.free_disk_mb / 1024).toFixed(1);
+      const isLowSpace = hw.free_disk_mb < 3000;
+
+      // Update Onboarding card
+      const onboardInput = this.slotExpanded.querySelector("#onboard-storage-path-input") as HTMLInputElement;
+      const onboardBadge = this.slotExpanded.querySelector("#onboard-storage-free-badge") as HTMLElement;
+      const onboardDrives = this.slotExpanded.querySelector("#onboard-quick-drives") as HTMLElement;
+
+      if (onboardInput) onboardInput.value = currentDir;
+      if (onboardBadge) {
+        onboardBadge.textContent = `${freeGb} GB free`;
+        onboardBadge.style.color = isLowSpace ? "#F87171" : "#34D399";
+      }
+      if (onboardDrives) {
+        onboardDrives.innerHTML = "";
+        disks.forEach((disk) => {
+          const btn = document.createElement("button");
+          btn.className = "btn-small-action";
+          const dFreeGb = (disk.free_mb / 1024).toFixed(0);
+          btn.textContent = `${disk.drive_letter} (${dFreeGb} GB free)`;
+          btn.style.fontSize = "10.5px";
+          btn.style.padding = "2px 8px";
+          btn.style.height = "22px";
+          btn.style.whiteSpace = "nowrap";
+
+          const currentUpper = currentDir.toUpperCase();
+          const driveUpper = disk.drive_letter.toUpperCase().replace(/\\$/, "");
+          const isCurrent = currentUpper.startsWith(driveUpper);
+
+          if (isCurrent) {
+            btn.style.borderColor = "#34D399";
+            btn.style.color = "#34D399";
+            btn.style.fontWeight = "600";
+            btn.title = "Current target storage drive";
+          } else if (disk.free_mb > 10000) {
+            btn.style.borderColor = "rgba(52, 211, 153, 0.4)";
+            btn.title = "Click to switch download storage to this drive";
+          } else {
+            btn.style.opacity = "0.6";
+            btn.title = "Low free space on this drive";
+          }
+
+          btn.addEventListener("click", async () => {
+            const newPath = `${disk.drive_letter.replace(/\\$/, "")}\\Mintu-Models`;
+            await modelManager.setModelsDir(newPath, false);
+            await this.refreshStorageUI();
+            eventBus.emit("pet:say", { text: `Target drive set to ${disk.drive_letter} (${dFreeGb} GB free)` });
+          });
+          onboardDrives.appendChild(btn);
+        });
+      }
+
+      // Update Settings card
+      const settingsInput = this.slotExpanded.querySelector("#settings-storage-path-input") as HTMLInputElement;
+      const settingsBadge = this.slotExpanded.querySelector("#settings-storage-free-badge") as HTMLElement;
+      const settingsDrives = this.slotExpanded.querySelector("#settings-quick-drives") as HTMLElement;
+
+      if (settingsInput && document.activeElement !== settingsInput) {
+        settingsInput.value = currentDir;
+      }
+      if (settingsBadge) {
+        settingsBadge.textContent = `${freeGb} GB free`;
+        settingsBadge.style.color = isLowSpace ? "#F87171" : "#34D399";
+      }
+      if (settingsDrives) {
+        settingsDrives.innerHTML = "";
+        disks.forEach((disk) => {
+          const btn = document.createElement("button");
+          btn.className = "btn-small-action";
+          const dFreeGb = (disk.free_mb / 1024).toFixed(0);
+          btn.textContent = `${disk.drive_letter} (${dFreeGb} GB free)`;
+          btn.style.fontSize = "10.5px";
+          btn.style.padding = "2px 8px";
+          btn.style.height = "22px";
+          btn.style.whiteSpace = "nowrap";
+
+          const currentUpper = currentDir.toUpperCase();
+          const driveUpper = disk.drive_letter.toUpperCase().replace(/\\$/, "");
+          const isCurrent = currentUpper.startsWith(driveUpper);
+
+          if (isCurrent) {
+            btn.style.borderColor = "#34D399";
+            btn.style.color = "#34D399";
+            btn.style.fontWeight = "600";
+            btn.title = "Current target storage drive";
+          }
+
+          btn.addEventListener("click", async () => {
+            const newPath = `${disk.drive_letter.replace(/\\$/, "")}\\Mintu-Models`;
+            if (settingsInput) settingsInput.value = newPath;
+            const moveCheck = this.slotExpanded.querySelector("#settings-storage-move-existing") as HTMLInputElement;
+            await modelManager.setModelsDir(newPath, moveCheck ? moveCheck.checked : false);
+            await this.refreshStorageUI();
+            this.populateModelSelects();
+            eventBus.emit("pet:say", { text: `Storage moved to ${disk.drive_letter} (${dFreeGb} GB free)!` });
+          });
+          settingsDrives.appendChild(btn);
+        });
+      }
+    } catch (e) {
+      console.warn("[IslandContent] Failed to refresh storage UI", e);
+    }
+  }
+
   private handleDownloadProgress(prog: DownloadProgress): void {
     const cardCheck = this.slotExpanded.querySelector("#onboarding-card-check") as HTMLElement;
     const cardDl = this.slotExpanded.querySelector("#onboarding-card-downloading") as HTMLElement;
@@ -2625,6 +2821,7 @@ export class IslandContentRenderer {
 
     if (view === "settings") {
       this.populateModelSelects();
+      this.refreshStorageUI();
       const promptInput = this.slotExpanded.querySelector("#settings-system-prompt") as HTMLTextAreaElement;
       if (promptInput) promptInput.value = chatManager.getSystemPrompt();
 
@@ -2838,14 +3035,21 @@ export class IslandContentRenderer {
       }
     }
 
+    if (view === "onboarding") {
+      this.populateModelSelects();
+      this.refreshStorageUI();
+    }
+
     this.updateCardDimensions();
   }
 
   private updateCardDimensions(): void {
     if (!this.onRequestResize) return;
 
-    if (this.expandedSubView === "onboarding" || this.expandedSubView === "settings") {
-      this.onRequestResize(440, 440);
+    if (this.expandedSubView === "onboarding") {
+      this.onRequestResize(450, 530);
+    } else if (this.expandedSubView === "settings") {
+      this.onRequestResize(450, 480);
     } else {
       const hasMsgs = chatManager.getMessages().length > 0;
       if (hasMsgs) {

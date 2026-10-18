@@ -3,7 +3,7 @@ use reqwest::header::{HeaderMap, HeaderValue, RANGE};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
@@ -50,27 +50,36 @@ pub struct InstalledModel {
 }
 
 pub struct DownloadManager {
-    models_dir: PathBuf,
+    models_dir: Arc<std::sync::RwLock<PathBuf>>,
     // Active cancel/pause senders per model_id
     active_downloads: Arc<Mutex<HashMap<String, watch::Sender<Option<DownloadCommand>>>>>,
 }
 
 impl DownloadManager {
-    pub fn new(models_dir: PathBuf) -> Self {
-        let _ = std::fs::create_dir_all(&models_dir);
+    pub fn new(models_dir: Arc<std::sync::RwLock<PathBuf>>) -> Self {
+        let dir = models_dir.read().unwrap().clone();
+        let _ = std::fs::create_dir_all(&dir);
         Self {
             models_dir,
             active_downloads: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
-    pub fn models_dir(&self) -> &Path {
-        &self.models_dir
+    pub fn models_dir(&self) -> PathBuf {
+        self.models_dir.read().unwrap().clone()
+    }
+
+    pub fn set_models_dir(&self, new_dir: PathBuf) -> Result<(), String> {
+        std::fs::create_dir_all(&new_dir).map_err(|e| e.to_string())?;
+        let mut lock = self.models_dir.write().map_err(|e| e.to_string())?;
+        *lock = new_dir;
+        Ok(())
     }
 
     pub fn list_installed(&self) -> Vec<InstalledModel> {
         let mut list = Vec::new();
-        if let Ok(entries) = std::fs::read_dir(&self.models_dir) {
+        let dir = self.models_dir();
+        if let Ok(entries) = std::fs::read_dir(&dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_file() {
@@ -101,12 +110,12 @@ impl DownloadManager {
     }
 
     pub fn is_model_installed(&self, model_id: &str) -> bool {
-        let target = self.models_dir.join(format!("{}.gguf", model_id));
+        let target = self.models_dir().join(format!("{}.gguf", model_id));
         target.exists() && target.is_file()
     }
 
     pub fn get_model_path(&self, model_id: &str) -> Option<PathBuf> {
-        let target = self.models_dir.join(format!("{}.gguf", model_id));
+        let target = self.models_dir().join(format!("{}.gguf", model_id));
         if target.exists() && target.is_file() {
             Some(target)
         } else {
@@ -118,8 +127,9 @@ impl DownloadManager {
         self.cancel_download(app, model_id).await?;
         tokio::time::sleep(Duration::from_millis(150)).await;
 
-        let target = self.models_dir.join(format!("{}.gguf", model_id));
-        let part = self.models_dir.join(format!("{}.gguf.part", model_id));
+        let dir = self.models_dir();
+        let target = dir.join(format!("{}.gguf", model_id));
+        let part = dir.join(format!("{}.gguf.part", model_id));
 
         if target.exists() {
             std::fs::remove_file(target).map_err(|e| e.to_string())?;
@@ -146,7 +156,7 @@ impl DownloadManager {
         if let Some(sender) = sender_opt {
             let _ = sender.send(Some(DownloadCommand::Cancel));
         } else {
-            let part = self.models_dir.join(format!("{}.gguf.part", model_id));
+            let part = self.models_dir().join(format!("{}.gguf.part", model_id));
             if part.exists() {
                 let _ = tokio::fs::remove_file(part).await;
             }
@@ -174,8 +184,9 @@ impl DownloadManager {
         spec: ModelSpec,
     ) -> Result<(), String> {
         let model_id = spec.id.clone();
-        let target_path = self.models_dir.join(format!("{}.gguf", model_id));
-        let part_path = self.models_dir.join(format!("{}.gguf.part", model_id));
+        let dir = self.models_dir();
+        let target_path = dir.join(format!("{}.gguf", model_id));
+        let part_path = dir.join(format!("{}.gguf.part", model_id));
 
         if target_path.exists() {
             let _ = app.emit(

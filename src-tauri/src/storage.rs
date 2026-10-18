@@ -223,6 +223,19 @@ impl StorageManager {
             );
         }
 
+        if user_version < 4 {
+            conn.execute_batch(
+                "
+                CREATE TABLE IF NOT EXISTS app_settings (
+                    key TEXT PRIMARY KEY,
+                    val TEXT NOT NULL
+                );
+                PRAGMA user_version = 4;
+                ",
+            )
+            .map_err(|e| e.to_string())?;
+        }
+
         Ok(())
     }
 
@@ -929,6 +942,35 @@ impl StorageManager {
         let conn = self.conn.lock().map_err(|e| e.to_string())?;
         conn.execute("DELETE FROM reminders WHERE id = ?1", params![id])
             .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    // ==========================================
+    // App Settings (Key-Value)
+    // ==========================================
+
+    pub fn get_setting(&self, key: &str) -> Result<Option<String>, String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare("SELECT val FROM app_settings WHERE key = ?1 LIMIT 1")
+            .map_err(|e| e.to_string())?;
+        let mut rows = stmt.query(params![key]).map_err(|e| e.to_string())?;
+        if let Some(row) = rows.next().map_err(|e| e.to_string())? {
+            let val: String = row.get(0).map_err(|e| e.to_string())?;
+            Ok(Some(val))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn set_setting(&self, key: &str, val: &str) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT INTO app_settings(key, val) VALUES (?1, ?2)
+             ON CONFLICT(key) DO UPDATE SET val = excluded.val;",
+            params![key, val],
+        )
+        .map_err(|e| e.to_string())?;
         Ok(())
     }
 }

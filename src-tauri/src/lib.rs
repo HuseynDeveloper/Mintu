@@ -20,7 +20,7 @@ use tauri::{
 };
 
 use downloader::{DownloadManager, InstalledModel, ModelSpec};
-use hardware::{detect_hardware, get_system_status, HardwareInfo, SystemStatus};
+use hardware::{detect_hardware, get_system_status, DiskDriveInfo, HardwareInfo, SystemStatus};
 use sidecar::{SidecarInfo, SidecarManager};
 use storage::{Conversation, MessageRecord, StorageManager};
 
@@ -55,7 +55,7 @@ pub struct AppState {
     pub storage: Arc<StorageManager>,
     pub downloader: Arc<DownloadManager>,
     pub sidecar: SidecarManager,
-    pub models_dir: PathBuf,
+    pub models_dir: Arc<std::sync::RwLock<PathBuf>>,
     pub media: Arc<media::MediaManager>,
     pub notifications: Arc<notifications::NotificationManager>,
 }
@@ -155,7 +155,8 @@ fn emit_bus_event(app: AppHandle, event: String, payload: String) -> Result<(), 
 
 #[tauri::command]
 fn get_hardware_info(state: State<'_, AppState>) -> Result<HardwareInfo, String> {
-    Ok(detect_hardware(&state.models_dir))
+    let p = state.models_dir.read().map_err(|e| e.to_string())?;
+    Ok(detect_hardware(&p))
 }
 
 #[tauri::command]
@@ -359,6 +360,114 @@ async fn delete_model(
     state.downloader.delete_model(app, &model_id).await
 }
 
+#[tauri::command]
+fn get_models_dir(state: State<'_, AppState>) -> Result<String, String> {
+    let path = state.models_dir.read().map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn set_models_dir(
+    state: State<'_, AppState>,
+    new_path: String,
+    move_existing: Option<bool>,
+) -> Result<HardwareInfo, String> {
+    let trimmed = new_path.trim();
+    if trimmed.is_empty() {
+        return Err("Path cannot be empty".to_string());
+    }
+    let new_p = PathBuf::from(trimmed);
+    std::fs::create_dir_all(&new_p).map_err(|e| format!("Failed to create folder {}: {}", trimmed, e))?;
+
+    let old_p = {
+        let lock = state.models_dir.read().map_err(|e| e.to_string())?;
+        lock.clone()
+    };
+
+    // Optionally move existing .gguf files
+    if move_existing.unwrap_or(false) && old_p != new_p && old_p.exists() {
+        if let Ok(entries) = std::fs::read_dir(&old_p) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.is_file() {
+                    let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("");
+                    if ext == "gguf" || ext == "part" {
+                        if let Some(file_name) = p.file_name() {
+                            let dest = new_p.join(file_name);
+                            let _ = std::fs::copy(&p, &dest);
+                            let _ = std::fs::remove_file(&p);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Update DownloadManager and state
+    state.downloader.set_models_dir(new_p.clone())?;
+    {
+        let mut lock = state.models_dir.write().map_err(|e| e.to_string())?;
+        *lock = new_p.clone();
+    }
+
+    // Persist in SQLite
+    let _ = state.storage.set_setting("models_dir", &new_p.to_string_lossy());
+
+    // Return new HardwareInfo with disk space re-calculated for new path
+    Ok(detect_hardware(&new_p))
+}
+
+#[tauri::command]
+fn get_available_disks(state: State<'_, AppState>) -> Result<Vec<DiskDriveInfo>, String> {
+    let p = state.models_dir.read().map_err(|e| e.to_string())?;
+    Ok(hardware::get_available_disks(&p))
+}
+
+#[tauri::command]
+async fn browse_models_dir() -> Result<Option<String>, String> {
+    tokio::task::spawn_blocking(|| {
+        #[cfg(target_os = "windows")]
+        {
+            use std::process::Command;
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+            let script = r#"
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = 'Select Mintu Models Storage Folder'
+$dialog.ShowNewFolderButton = $true
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    Write-Output $dialog.SelectedPath
+}
+"#;
+            let output = Command::new("powershell.exe")
+                .arg("-NoProfile")
+                .arg("-NonInteractive")
+                .arg("-Command")
+                .arg(script)
+                .creation_flags(CREATE_NO_WINDOW)
+                .output()
+                .map_err(|e| e.to_string())?;
+
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !stdout.is_empty() {
+                    return Ok(Some(stdout));
+                }
+            }
+            Ok(None)
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            Ok(None)
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 // ==========================================
 // Llama Sidecar Commands
 // ==========================================
@@ -378,7 +487,8 @@ async fn start_sidecar(
 
     let ctx = context_length.unwrap_or(2048);
     let th = threads.unwrap_or_else(|| {
-        let hw = detect_hardware(&state.models_dir);
+        let p = state.models_dir.read().unwrap();
+        let hw = detect_hardware(&p);
         (hw.cpu_cores / 2).max(2) as u32
     });
 
@@ -913,6 +1023,10 @@ pub fn run() {
             pause_model_download,
             cancel_model_download,
             delete_model,
+            get_models_dir,
+            set_models_dir,
+            get_available_disks,
+            browse_models_dir,
             start_sidecar,
             stop_sidecar,
             get_sidecar_info,
@@ -971,8 +1085,6 @@ pub fn run() {
                 });
             crate::log_step(&format!("app_data: {:?}", app_data));
             let _ = std::fs::create_dir_all(&app_data);
-            let models_dir = app_data.join("models");
-            let _ = std::fs::create_dir_all(&models_dir);
             let db_path = app_data.join("mintu.db");
             crate::log_step(&format!("db_path: {:?}", db_path));
 
@@ -980,7 +1092,34 @@ pub fn run() {
                 StorageManager::new(db_path)
                     .expect("Failed to initialize SQLite storage manager"),
             );
-            let download_mgr = Arc::new(DownloadManager::new(models_dir.clone()));
+
+            // Determine models directory: saved setting -> smart low-space fallback -> default AppData/models
+            let saved_dir = storage_mgr.get_setting("models_dir").ok().flatten();
+            let initial_models_dir = if let Some(saved) = saved_dir {
+                let p = PathBuf::from(saved);
+                if p.exists() || std::fs::create_dir_all(&p).is_ok() {
+                    p
+                } else {
+                    app_data.join("models")
+                }
+            } else {
+                let default_dir = app_data.join("models");
+                let c_hw = detect_hardware(&default_dir);
+                let d_drive = PathBuf::from("D:\\Mintu-Models");
+                // If C: drive has less than 3 GB free and D: drive exists, automatically default to D:\Mintu-Models!
+                if c_hw.free_disk_mb < 3000 && PathBuf::from("D:\\").exists() {
+                    let _ = std::fs::create_dir_all(&d_drive);
+                    let _ = storage_mgr.set_setting("models_dir", &d_drive.to_string_lossy());
+                    d_drive
+                } else {
+                    let _ = std::fs::create_dir_all(&default_dir);
+                    default_dir
+                }
+            };
+            let _ = std::fs::create_dir_all(&initial_models_dir);
+            let models_dir_lock = Arc::new(std::sync::RwLock::new(initial_models_dir));
+
+            let download_mgr = Arc::new(DownloadManager::new(models_dir_lock.clone()));
             let sidecar_mgr = SidecarManager::new();
             let media_mgr = Arc::new(media::MediaManager::new());
             let notif_mgr = Arc::new(notifications::NotificationManager::new());
@@ -1030,7 +1169,7 @@ pub fn run() {
                 storage: storage_mgr,
                 downloader: download_mgr,
                 sidecar: sidecar_mgr,
-                models_dir,
+                models_dir: models_dir_lock,
                 media: media_mgr,
                 notifications: notif_mgr,
             });

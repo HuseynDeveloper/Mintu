@@ -35,6 +35,7 @@ pub fn detect_hardware(models_dir: &std::path::Path) -> HardwareInfo {
         }
 
         // 2. Disk space detection
+        let _ = std::fs::create_dir_all(models_dir);
         let path_str = models_dir.to_string_lossy();
         let mut wide_path: Vec<u16> = path_str.encode_utf16().collect();
         wide_path.push(0);
@@ -53,7 +54,12 @@ pub fn detect_hardware(models_dir: &std::path::Path) -> HardwareInfo {
             free_disk_mb = free_bytes_avail / (1024 * 1024);
         } else {
             // Fallback to drive root if models dir doesn't exist yet
-            let drive_root: Vec<u16> = "C:\\\0".encode_utf16().collect();
+            let drive_prefix = if path_str.len() >= 2 && path_str.as_bytes()[1] == b':' {
+                format!("{}:\\\0", &path_str[0..1])
+            } else {
+                "C:\\\0".to_string()
+            };
+            let drive_root: Vec<u16> = drive_prefix.encode_utf16().collect();
             if GetDiskFreeSpaceExW(
                 drive_root.as_ptr(),
                 &mut free_bytes_avail,
@@ -85,6 +91,78 @@ pub fn detect_hardware(models_dir: &std::path::Path) -> HardwareInfo {
         gpu_name,
         recommended_tier,
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiskDriveInfo {
+    pub drive_letter: String,
+    pub total_mb: u64,
+    pub free_mb: u64,
+    pub is_selected: bool,
+}
+
+pub fn get_available_disks(current_models_dir: &std::path::Path) -> Vec<DiskDriveInfo> {
+    let mut drives = Vec::new();
+
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows_sys::Win32::Storage::FileSystem::{
+            GetDiskFreeSpaceExW, GetDriveTypeW, GetLogicalDriveStringsW,
+        };
+        const DRIVE_REMOVABLE: u32 = 2;
+        const DRIVE_FIXED: u32 = 3;
+
+        let mut buffer = [0u16; 512];
+        let len = GetLogicalDriveStringsW(buffer.len() as u32, buffer.as_mut_ptr());
+        if len > 0 && (len as usize) < buffer.len() {
+            let current_upper = current_models_dir.to_string_lossy().to_uppercase();
+            let mut start = 0;
+            for i in 0..(len as usize) {
+                if buffer[i] == 0 {
+                    if start < i {
+                        let drive_slice = &buffer[start..i];
+                        let drive_str = String::from_utf16_lossy(drive_slice);
+                        let mut drive_null = drive_slice.to_vec();
+                        drive_null.push(0);
+
+                        let drive_type = GetDriveTypeW(drive_null.as_ptr());
+                        if drive_type == DRIVE_FIXED || drive_type == DRIVE_REMOVABLE {
+                            let mut free_bytes: u64 = 0;
+                            let mut total_bytes: u64 = 0;
+                            let mut total_free: u64 = 0;
+                            if GetDiskFreeSpaceExW(
+                                drive_null.as_ptr(),
+                                &mut free_bytes,
+                                &mut total_bytes,
+                                &mut total_free,
+                            ) != 0 {
+                                let drive_prefix = drive_str.trim_end_matches('\\').to_uppercase();
+                                let is_selected = current_upper.starts_with(&drive_prefix);
+                                drives.push(DiskDriveInfo {
+                                    drive_letter: drive_str,
+                                    total_mb: total_bytes / (1024 * 1024),
+                                    free_mb: free_bytes / (1024 * 1024),
+                                    is_selected,
+                                });
+                            }
+                        }
+                    }
+                    start = i + 1;
+                }
+            }
+        }
+    }
+
+    if drives.is_empty() {
+        drives.push(DiskDriveInfo {
+            drive_letter: "C:\\".to_string(),
+            total_mb: 120_000,
+            free_mb: 10_000,
+            is_selected: true,
+        });
+    }
+
+    drives
 }
 
 use std::sync::Mutex;

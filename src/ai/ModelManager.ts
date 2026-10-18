@@ -3,7 +3,7 @@
  * Handles models.json catalog, hardware recommendation, downloads, and model switching.
  */
 
-import { DownloadProgress, HardwareInfo, InstalledModel, ModelCatalogItem } from "./types";
+import { DiskDriveInfo, DownloadProgress, HardwareInfo, InstalledModel, ModelCatalogItem } from "./types";
 import { DEFAULT_MODELS_CATALOG } from "./modelsCatalog";
 
 export class ModelManager {
@@ -175,6 +175,58 @@ export class ModelManager {
   async deleteModel(modelId: string): Promise<void> {
     await this.invoke("delete_model", { modelId });
     await this.refreshInstalledModels();
+  }
+
+  async getModelsDir(): Promise<string> {
+    try {
+      const res = await this.invoke("get_models_dir");
+      if (res) return res;
+    } catch (e) {
+      console.warn("[ModelManager] Failed to get models dir", e);
+    }
+    return localStorage.getItem("mintu_models_dir") || "D:\\Mintu-Models";
+  }
+
+  async setModelsDir(newPath: string, moveExisting: boolean = false): Promise<HardwareInfo> {
+    try {
+      const res = await this.invoke("set_models_dir", { newPath, moveExisting });
+      if (res) {
+        this.hardwareInfo = res;
+        localStorage.setItem("mintu_models_dir", newPath);
+        await this.refreshInstalledModels();
+        return res;
+      }
+    } catch (e) {
+      console.warn("[ModelManager] Failed to set models dir", e);
+      throw e;
+    }
+    localStorage.setItem("mintu_models_dir", newPath);
+    return await this.detectHardware();
+  }
+
+  async getAvailableDisks(): Promise<DiskDriveInfo[]> {
+    try {
+      const res = await this.invoke("get_available_disks");
+      if (Array.isArray(res) && res.length > 0) {
+        return res;
+      }
+    } catch (e) {
+      console.warn("[ModelManager] Failed to get available disks", e);
+    }
+    return [
+      { drive_letter: "C:\\", total_mb: 120000, free_mb: 300, is_selected: false },
+      { drive_letter: "D:\\", total_mb: 500000, free_mb: 154000, is_selected: true },
+    ];
+  }
+
+  async browseModelsDir(): Promise<string | null> {
+    try {
+      const res = await this.invoke("browse_models_dir");
+      return res || null;
+    } catch (e) {
+      console.warn("[ModelManager] Failed to browse models dir", e);
+      return null;
+    }
   }
 
   simulateMockDownload(modelId: string = "qwen2.5-0.5b"): void {

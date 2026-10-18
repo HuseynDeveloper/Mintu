@@ -82,6 +82,13 @@ export interface HardwareInfo {
   recommended_tier: string;
 }
 
+export interface DiskDriveInfo {
+  drive_letter: string;
+  total_mb: number;
+  free_mb: number;
+  is_selected: boolean;
+}
+
 export interface InstalledModel {
   id: string;
   file_name: string;
