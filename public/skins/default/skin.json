@@ -1,0 +1,24 @@
+{
+  "id": "default-mintu",
+  "name": "Mintu (Classic Mint)",
+  "author": "Mintu Team",
+  "version": "1.0.0",
+  "type": "svg",
+  "colors": {
+    "petBody": "#A8E8D5",
+    "petBodyShadow": "#8FE0C8",
+    "petBelly": "#FFF2DD",
+    "petBellyShadow": "#FBE6CA",
+    "petOutline": "#2D3E36",
+    "petEye": "#23342D",
+    "petEyeHighlight": "#FFFFFF",
+    "petBlush": "#FFAAA6",
+    "petNose": "#23342D",
+    "petMouth": "#2D3E36",
+    "petTongue": "#FF758F",
+    "petEarInner": "#92DFC9",
+    "petGroundShadow": "rgba(45, 62, 54, 0.16)",
+    "accessoryHeadphones": "#374151",
+    "accessoryAccent": "#10B981"
+  }
+}

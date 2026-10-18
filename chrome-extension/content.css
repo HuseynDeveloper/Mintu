@@ -1,0 +1,141 @@
+/* Mintu Living Companion — Content Script Styles */
+
+#mintu-floating-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647; /* Maximum z-index to stay on top */
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#mintu-floating-container.mintu-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.6);
+}
+
+/* Floating Pet Widget */
+.mintu-pet-widget {
+  width: 64px;
+  height: 64px;
+  cursor: grab;
+  position: relative;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
+  animation: mintu-float-bob 3.5s ease-in-out infinite;
+  transition: transform 0.15s ease;
+}
+
+.mintu-pet-widget:hover {
+  transform: scale(1.08);
+}
+
+.mintu-pet-widget:active {
+  cursor: grabbing;
+  transform: scale(0.96);
+}
+
+.mintu-pet-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Bobbing animation */
+@keyframes mintu-float-bob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Speech Bubble Popup */
+.mintu-speech-bubble {
+  position: absolute;
+  bottom: 74px;
+  right: 0;
+  width: 200px;
+  background: rgba(18, 24, 21, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(154, 230, 180, 0.25);
+  border-radius: 12px;
+  padding: 10px;
+  color: #f0fdf4;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.mintu-speech-bubble.mintu-bubble-open {
+  display: flex;
+  animation: mintu-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes mintu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mintu-bubble-text {
+  font-size: 11.5px;
+  color: #bbf7d0;
+  font-weight: 500;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mintu-bubble-action {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #f0fdf4;
+  padding: 5px 8px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 11px;
+  transition: all 0.15s ease;
+}
+
+.mintu-bubble-action:hover {
+  background: rgba(154, 230, 180, 0.2);
+  border-color: #68d391;
+  color: #ffffff;
+}
+
+/* Selection Quick Pill */
+#mintu-selection-pill {
+  position: absolute;
+  z-index: 2147483647;
+  display: none;
+  align-items: center;
+  gap: 5px;
+  background: #121815;
+  color: #9ae6b4;
+  border: 1px solid rgba(154, 230, 180, 0.3);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+#mintu-selection-pill:hover {
+  background: #1c2621;
+  transform: translateY(-2px);
+  color: #ffffff;
+}

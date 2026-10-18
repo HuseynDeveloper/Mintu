@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mintu Region Capture</title>
+    <link rel="stylesheet" href="/src/styles/bubble.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none;
+      }
+
+      html, body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.45);
+        cursor: crosshair;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      /* Cutout canvas */
+      #cutout-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      /* Active selection rectangle */
+      #selection-box {
+        position: absolute;
+        border: 1.5px solid #ffffff;
+        background: rgba(255, 255, 255, 0.05);
+        display: none;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      /* Four square corner handles (Image F) */
+      .corner-handle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.4);
+      }
+      .handle-tl { top: -3px; left: -3px; }
+      .handle-tr { top: -3px; right: -3px; }
+      .handle-bl { bottom: -3px; left: -3px; }
+      .handle-br { bottom: -3px; right: -3px; }
+
+      /* Live dimension badge (Image F) */
+      #dim-badge {
+        position: absolute;
+        top: -28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(18, 22, 20, 0.95);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        letter-spacing: -0.2px;
+        pointer-events: none;
+      }
+
+      /* Peeking Mintu at top right (Image F) */
+      #peeking-mintu-container {
+        position: fixed;
+        top: 20px;
+        right: 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 200;
+        pointer-events: auto;
+      }
+
+      .peek-bubble {
+        background: #ffffff;
+        color: #1f2937;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-cancel-capture {
+        background: #ef4444;
+        color: #ffffff;
+        border: none;
+        outline: none;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.1s ease, background 0.15s ease;
+      }
+
+      .btn-cancel-capture:hover {
+        background: #dc2626;
+        transform: scale(1.05);
+      }
+
+      #peeking-mintu-pet {
+        width: 58px;
+        height: 58px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="cutout-canvas"></canvas>
+
+    <div id="selection-box">
+      <div class="corner-handle handle-tl"></div>
+      <div class="corner-handle handle-tr"></div>
+      <div class="corner-handle handle-bl"></div>
+      <div class="corner-handle handle-br"></div>
+      <div id="dim-badge">640 × 220</div>
+    </div>
+
+    <!-- Image F: Peeking Mintu with speech bubble -->
+    <div id="peeking-mintu-container">
+      <div class="peek-bubble" id="capture-status-bubble">
+        <span>Drag to select area (Esc or Right-click to cancel)</span>
+        <button class="btn-cancel-capture" id="btn-cancel-overlay" title="Cancel capture">✕ Cancel</button>
+      </div>
+      <div id="peeking-mintu-pet"></div>
+    </div>
+
+    <script type="module" src="/src/capture.ts"></script>
+  </body>
+</html>

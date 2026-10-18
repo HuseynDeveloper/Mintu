@@ -1,0 +1,60 @@
+import { ModelCatalogItem } from "./types";
+
+export const DEFAULT_MODELS_CATALOG: ModelCatalogItem[] = [
+  {
+    id: "qwen2.5-0.5b",
+    name: "Qwen 2.5 0.5B Instruct",
+    tier: "very-low",
+    size_bytes: 491400032,
+    size_human: "491 MB",
+    min_ram_gb: 2,
+    context_length: 4096,
+    url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+    sha256: "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+    license: "Apache-2.0",
+    languages_note: "Multilingual (EN, AZ, TR, RU, etc.)",
+    description: "Ultra-compact model. Blazing fast on any machine, runs seamlessly even with 4 GB total RAM."
+  },
+  {
+    id: "qwen2.5-1.5b",
+    name: "Qwen 2.5 1.5B Instruct",
+    tier: "low",
+    size_bytes: 1117320736,
+    size_human: "1.12 GB",
+    min_ram_gb: 4,
+    context_length: 4096,
+    url: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    sha256: "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+    license: "Apache-2.0",
+    languages_note: "Multilingual (EN, AZ, TR, RU, etc.)",
+    description: "Balanced compact model. Great conversational quality, fast response times."
+  },
+  {
+    id: "llama-3.2-3b",
+    name: "Llama 3.2 3B Instruct",
+    tier: "medium",
+    size_bytes: 2019377696,
+    size_human: "2.02 GB",
+    min_ram_gb: 8,
+    context_length: 4096,
+    url: "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+    sha256: "6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff",
+    license: "Llama 3.2 Community",
+    languages_note: "Multilingual (EN, AZ, TR, RU, etc.)",
+    description: "High intelligence for complex coding, reasoning, and context analysis."
+  },
+  {
+    id: "nomic-embed-text-v1.5",
+    name: "Nomic Embed Text v1.5",
+    tier: "embedding",
+    size_bytes: 84106624,
+    size_human: "84 MB",
+    min_ram_gb: 1,
+    context_length: 2048,
+    url: "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q4_K_M.gguf",
+    sha256: "d4e388894e09cf3816e8b0896d81d265b55e7a9fff9ab03fe8bf4ef5e11295ac",
+    license: "Apache-2.0",
+    languages_note: "Multilingual text embedding model",
+    description: "Fast local embedding model for semantic memory search."
+  }
+];

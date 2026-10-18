@@ -1,0 +1,85 @@
+/* Mintu Pet Styles & CSS Variables */
+:root {
+  --pet-body: #A8E8D5;
+  --pet-body-shadow: #8FE0C8;
+  --pet-belly: #FFF2DD;
+  --pet-belly-shadow: #FBE6CA;
+  --pet-outline: #2D3E36;
+  --pet-eye: #23342D;
+  --pet-eye-highlight: #FFFFFF;
+  --pet-blush: #FFAAA6;
+  --pet-nose: #23342D;
+  --pet-mouth: #2D3E36;
+  --pet-tongue: #FF758F;
+  --pet-ear-inner: #92DFC9;
+  --pet-ground-shadow: rgba(45, 62, 54, 0.16);
+  --pet-accessory-headphones: #374151;
+  --pet-accessory-headphones-accent: #10B981;
+}
+
+.mintu-pet-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+
+.mintu-pet-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  will-change: transform;
+}
+
+/* Mode 1: Pill Mode (inside dynamic island) */
+.mintu-pet-container.pill-mode {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* In expanded AI slot, pet sits neatly inside the expanded top bar */
+.mintu-island.expanded .mintu-pet-container.pill-mode,
+.slot-expanded.active ~ .mintu-pet-container.pill-mode {
+  left: 16px;
+  top: 18px;
+  transform: none;
+  width: 44px;
+  height: 44px;
+}
+
+/* Mode 2: Full Mode (Desktop Free Mode) */
+.mintu-pet-container.full-mode {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  cursor: grab;
+  z-index: 50;
+  touch-action: none;
+}
+
+.mintu-pet-container.full-mode.dragging {
+  cursor: grabbing;
+}
+
+/* Floating Accessory Micro-Animations */
+.acc-float {
+  animation: float-bob 2.2s infinite ease-in-out;
+}
+
+@keyframes float-bob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}

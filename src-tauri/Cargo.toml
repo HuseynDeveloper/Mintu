@@ -1,0 +1,52 @@
+[package]
+name = "mintu"
+version = "0.2.0"
+description = "A living desktop companion with a Dynamic Island"
+authors = ["Mintu Contributors"]
+edition = "2021"
+
+[lib]
+name = "mintu_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.40.2", features = ["bundled", "bundled-full"] }
+futures-util = "0.3.34"
+sha2 = "0.11.1"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+tokio = { version = "1", features = ["process", "sync", "time", "net", "io-util", "fs"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_Graphics_Gdi",
+    "Win32_System_SystemInformation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_System_Threading",
+    "Win32_Graphics_Dwm",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Shell",
+    "Win32_Security_Credentials",
+    "Win32_System_Diagnostics_ToolHelp"
+] }
+windows = { version = "0.58", features = [
+    "Media_Control",
+    "Storage_Streams",
+    "Foundation",
+    "Foundation_Collections",
+    "UI_Notifications_Management",
+    "ApplicationModel",
+    "Media_Ocr",
+    "Graphics_Imaging",
+] }
+base64 = "0.22"
