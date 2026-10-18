@@ -173,6 +173,22 @@ class AppBridge {
       await invoke("set_window_ignore_list", { list });
     } catch {}
   }
+
+  async getAutostart(): Promise<boolean> {
+    try {
+      return await invoke("get_autostart");
+    } catch {
+      return false;
+    }
+  }
+
+  async setAutostart(enable: boolean): Promise<boolean> {
+    try {
+      return await invoke("set_autostart", { enable });
+    } catch {
+      return false;
+    }
+  }
 }
 
 export interface WalkableWindow {

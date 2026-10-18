@@ -78,16 +78,39 @@ export class AnthropicAdapter implements AIProvider {
 
         // Separate system messages
         let systemPrompt = "";
-        const userAndAssistantMessages: Array<{ role: string; content: string }> = [];
+        const userAndAssistantMessages: Array<{ role: string; content: any }> = [];
 
         for (const m of messages) {
           if (m.role === "system") {
             systemPrompt += (systemPrompt ? "\n\n" : "") + m.content;
           } else {
-            userAndAssistantMessages.push({
-              role: m.role === "assistant" ? "assistant" : "user",
-              content: m.content,
-            });
+            const imgMatch = m.content.match(/data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=]+)/);
+            if (imgMatch && m.role === "user") {
+              const mediaType = `image/${imgMatch[1] === "jpg" ? "jpeg" : imgMatch[1]}`;
+              const textOnly = m.content.replace(/data:image\/[a-zA-Z]+;base64,[A-Za-z0-9+/=]+/g, "").trim();
+              userAndAssistantMessages.push({
+                role: "user",
+                content: [
+                  {
+                    type: "image",
+                    source: {
+                      type: "base64",
+                      media_type: mediaType,
+                      data: imgMatch[2],
+                    },
+                  },
+                  {
+                    type: "text",
+                    text: textOnly || "Analyze this image:",
+                  },
+                ],
+              });
+            } else {
+              userAndAssistantMessages.push({
+                role: m.role === "assistant" ? "assistant" : "user",
+                content: m.content,
+              });
+            }
           }
         }
 

@@ -121,15 +121,32 @@ export class OpenAICompatibleAdapter implements AIProvider {
 
           // Extract system prompt if present
           let systemPrompt = "";
-          const userContents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+          const userContents: Array<{ role: string; parts: Array<any> }> = [];
 
           for (const m of messages) {
             if (m.role === "system") {
               systemPrompt = systemPrompt ? `${systemPrompt}\n\n${m.content}` : m.content;
             } else {
+              const parts: any[] = [];
+              const imgMatch = m.content.match(/data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=]+)/);
+              if (imgMatch) {
+                const mimeType = `image/${imgMatch[1] === "jpg" ? "jpeg" : imgMatch[1]}`;
+                const data = imgMatch[2];
+                const textOnly = m.content.replace(/data:image\/[a-zA-Z]+;base64,[A-Za-z0-9+/=]+/g, "[Screenshot Attached]").trim();
+                if (textOnly) parts.push({ text: textOnly });
+                parts.push({
+                  inlineData: {
+                    mimeType,
+                    data,
+                  },
+                });
+              } else {
+                parts.push({ text: m.content });
+              }
+
               userContents.push({
                 role: m.role === "assistant" ? "model" : "user",
-                parts: [{ text: m.content }],
+                parts,
               });
             }
           }
@@ -158,9 +175,24 @@ export class OpenAICompatibleAdapter implements AIProvider {
             headers["x-goog-api-key"] = apiKey;
           }
 
+          const formattedMessages = messages.map((m) => {
+            const imgMatch = m.content.match(/data:image\/([a-zA-Z]+);base64,([A-Za-z0-9+/=]+)/);
+            if (imgMatch && m.role !== "system") {
+              const textOnly = m.content.replace(/data:image\/[a-zA-Z]+;base64,[A-Za-z0-9+/=]+/g, "").trim();
+              return {
+                role: m.role,
+                content: [
+                  { type: "text", text: textOnly || "Analyze this image:" },
+                  { type: "image_url", image_url: { url: imgMatch[0] } },
+                ],
+              };
+            }
+            return m;
+          });
+
           bodyPayload = {
             model: this.model,
-            messages,
+            messages: formattedMessages,
             stream: true,
             temperature: 0.7,
           };

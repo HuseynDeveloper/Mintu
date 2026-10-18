@@ -30,6 +30,7 @@ import { timerModule } from "../modules/timer/TimerModule";
 import { timerEngine } from "../modules/timer/TimerEngine";
 import { statusModule } from "../modules/status/StatusModule";
 import { moduleRegistry } from "../modules/ModuleRegistry";
+import { voiceManager } from "../voice/VoiceManager";
 
 export interface NotificationPayload {
   icon?: string;
@@ -275,7 +276,14 @@ export class IslandContentRenderer {
           <div class="expanded-input-row">
             <div class="chat-attached-chips" id="chat-attached-chips"></div>
             <div class="chat-input-pill">
-              <input type="text" placeholder="Type a message..." class="chat-text-input" />
+              <input type="text" placeholder="Type a message or speak..." class="chat-text-input" />
+              <button class="chat-mic-btn" id="chat-mic-btn" title="Voice Input / Click or hold to talk">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="22"></line>
+                </svg>
+              </button>
               <button class="chat-stop-btn" style="display: none;" title="Stop generation">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                   <rect x="6" y="6" width="12" height="12" rx="2.5"></rect>
@@ -480,6 +488,38 @@ export class IslandContentRenderer {
                 <label class="input-label">Privacy App Blocklist</label>
                 <textarea class="mintu-textarea" id="settings-privacy-blocklist" rows="2" placeholder="1password.exe, bitwarden.exe, keepass.exe"></textarea>
                 <div class="setting-hint">Mintu will never read or capture text/screen from these apps.</div>
+              </div>
+
+              <!-- SYSTEM & STARTUP CONVENIENCE (MILESTONE 7) -->
+              <div class="settings-section-divider">System &amp; Startup Convenience</div>
+              <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <label class="input-label" style="margin-bottom: 0;">Auto-start with Windows</label>
+                  <input type="checkbox" id="settings-autostart-toggle" style="accent-color: #34D399; width: 16px; height: 16px; cursor: pointer;" />
+                </div>
+                <div class="setting-hint">Launch Mintu automatically in background when your PC boots.</div>
+              </div>
+
+              <!-- VOICE & SPEECH ENGINE (MILESTONE 7) -->
+              <div class="settings-section-divider">Voice &amp; Speech (Milestone 7)</div>
+              <div class="setting-item">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <label class="input-label" style="margin-bottom: 0;">Mintu Voice (Text-to-Speech)</label>
+                  <input type="checkbox" id="settings-tts-toggle" style="accent-color: #34D399; width: 16px; height: 16px; cursor: pointer;" />
+                </div>
+                <div class="setting-hint">Speaks answers aloud with synchronized pet mouth animations.</div>
+              </div>
+
+              <div class="setting-item">
+                <label class="input-label">Voice Recognition Language (STT)</label>
+                <select class="mintu-select" id="settings-stt-language">
+                  <option value="az-AZ">Azərbaycan (az-AZ)</option>
+                  <option value="en-US">English (en-US)</option>
+                  <option value="tr-TR">Türkçe (tr-TR)</option>
+                  <option value="ru-RU">Русский (ru-RU)</option>
+                  <option value="de-DE">Deutsch (de-DE)</option>
+                </select>
+                <div class="setting-hint">Target language for microphone speech input.</div>
               </div>
 
               <div class="setting-item">
@@ -949,7 +989,44 @@ export class IslandContentRenderer {
 
     this.stopBtnEl.addEventListener("click", () => {
       chatManager.stopGeneration();
+      voiceManager.stopSpeaking();
     });
+
+    // Milestone 7: Voice Input (Microphone / STT)
+    const micBtn = this.slotExpanded.querySelector("#chat-mic-btn") as HTMLButtonElement;
+    if (micBtn) {
+      micBtn.addEventListener("click", () => {
+        if (voiceManager.isListening()) {
+          voiceManager.stopListening();
+          micBtn.classList.remove("listening");
+        } else {
+          micBtn.classList.add("listening");
+          const started = voiceManager.startListening(
+            (transcript, isFinal) => {
+              this.chatInputEl.value = transcript;
+              if (isFinal && transcript.trim()) {
+                micBtn.classList.remove("listening");
+                this.submitUserMessage();
+              }
+            },
+            (err) => {
+              micBtn.classList.remove("listening");
+              eventBus.emit("pet:say", { text: `Mic: ${err}` });
+            },
+            (listening) => {
+              if (listening) {
+                micBtn.classList.add("listening");
+              } else {
+                micBtn.classList.remove("listening");
+              }
+            }
+          );
+          if (!started) {
+            micBtn.classList.remove("listening");
+          }
+        }
+      });
+    }
 
     // Suggestion chips click
     this.chipsRowEl.addEventListener("click", (e) => {
@@ -1163,6 +1240,22 @@ export class IslandContentRenderer {
       const reduceMotionSelect = this.slotExpanded.querySelector("#settings-reduce-motion") as HTMLSelectElement;
       if (reduceMotionSelect) {
         moduleRegistry.setReduceMotion(reduceMotionSelect.value as any);
+      }
+
+      // Milestone 7: Autostart with Windows
+      const autostartCheck = this.slotExpanded.querySelector("#settings-autostart-toggle") as HTMLInputElement;
+      if (autostartCheck) {
+        appBridge.setAutostart(autostartCheck.checked);
+      }
+
+      // Milestone 7: Voice TTS & STT settings
+      const ttsCheck = this.slotExpanded.querySelector("#settings-tts-toggle") as HTMLInputElement;
+      const sttLangSelect = this.slotExpanded.querySelector("#settings-stt-language") as HTMLSelectElement;
+      if (ttsCheck && sttLangSelect) {
+        voiceManager.saveConfig({
+          ttsEnabled: ttsCheck.checked,
+          sttLanguage: sttLangSelect.value,
+        });
       }
 
       eventBus.emit("pet:say", { text: "Settings saved!" });
@@ -2171,6 +2264,7 @@ export class IslandContentRenderer {
     };
 
     // Listen to AI state
+    let prevAiState = "idle";
     chatManager.onStateChanged = (state) => {
       if (state === "streaming" || state === "thinking") {
         this.sendBtnEl.style.display = "none";
@@ -2178,8 +2272,34 @@ export class IslandContentRenderer {
       } else {
         this.sendBtnEl.style.display = "flex";
         this.stopBtnEl.style.display = "none";
+
+        // Milestone 7: Speak assistant answer if TTS is enabled
+        if (prevAiState === "streaming" && state === "idle") {
+          const msgs = chatManager.getMessages();
+          const lastMsg = msgs[msgs.length - 1];
+          if (lastMsg && lastMsg.role === "assistant" && lastMsg.content) {
+            voiceManager.speak(lastMsg.content);
+          }
+        }
       }
+      prevAiState = state;
     };
+
+    // Milestone 7: Enriched System Tray Action listeners
+    appBridge.listenToEvent<string>("tray-action", (action) => {
+      if (action === "start-pomodoro") {
+        timerEngine.startPomodoro({ focusDurationSec: 25 * 60 }, "Focus Session");
+        eventBus.emit("island:request-state", "timer");
+        eventBus.emit("pet:say", { text: "25-minute Pomodoro started!" });
+      } else if (action === "stop-timer") {
+        timerEngine.reset();
+        eventBus.emit("pet:say", { text: "Timer stopped." });
+      } else if (action === "toggle-quiet") {
+        const curQuiet = moodManager.isQuietMode();
+        moodManager.setQuietMode(!curQuiet);
+        eventBus.emit("pet:say", { text: !curQuiet ? "Quiet mode enabled." : "Quiet mode disabled." });
+      }
+    });
 
     // Listen to download progress
     modelManager.onDownloadProgress = (prog: DownloadProgress) => {
@@ -3033,6 +3153,19 @@ export class IslandContentRenderer {
             .join("");
         }
       }
+
+      // Milestone 7: Populate Windows Auto-Start
+      appBridge.getAutostart().then((enabled) => {
+        const autostartCheck = this.slotExpanded.querySelector("#settings-autostart-toggle") as HTMLInputElement;
+        if (autostartCheck) autostartCheck.checked = enabled;
+      });
+
+      // Milestone 7: Populate Voice settings
+      const voiceCfg = voiceManager.getConfig();
+      const ttsCheck = this.slotExpanded.querySelector("#settings-tts-toggle") as HTMLInputElement;
+      if (ttsCheck) ttsCheck.checked = voiceCfg.ttsEnabled;
+      const sttLangSelect = this.slotExpanded.querySelector("#settings-stt-language") as HTMLSelectElement;
+      if (sttLangSelect) sttLangSelect.value = voiceCfg.sttLanguage;
     }
 
     if (view === "onboarding") {

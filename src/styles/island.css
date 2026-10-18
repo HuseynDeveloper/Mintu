@@ -1016,6 +1016,54 @@ body {
   transform: scale(0.92);
 }
 
+.chat-mic-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  max-width: 32px;
+  max-height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #9ca3af;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chat-mic-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #34d399;
+  transform: scale(1.05);
+}
+
+.chat-mic-btn.listening {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border-color: #34d399;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+  animation: mic-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes mic-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.85);
+  }
+}
+
 /* Collapsed Status & Ring */
 .collapsed-status-wrap {
   display: flex;

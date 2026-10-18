@@ -982,6 +982,50 @@ fn db_delete_reminder(
     state.storage.delete_reminder(id)
 }
 
+#[tauri::command]
+fn get_autostart() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        let output = std::process::Command::new("reg")
+            .args(&["query", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "Mintu"])
+            .output();
+        match output {
+            Ok(out) => out.status.success(),
+            Err(_) => false,
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    false
+}
+
+#[tauri::command]
+fn set_autostart(enable: bool) -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    {
+        if enable {
+            let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+            let exe_str = exe_path.to_string_lossy().to_string();
+            let val = format!("\"{}\"", exe_str);
+            let status = std::process::Command::new("reg")
+                .args(&["add", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "Mintu", "/t", "REG_SZ", "/d", &val, "/f"])
+                .status()
+                .map_err(|e| e.to_string())?;
+            if status.success() {
+                Ok(true)
+            } else {
+                Err("Failed to set autostart registry entry".to_string())
+            }
+        } else {
+            let _ = std::process::Command::new("reg")
+                .args(&["delete", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "/v", "Mintu", "/f"])
+                .status();
+            Ok(false)
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    Ok(false)
+}
+
 // ==========================================
 // Application Entrypoint
 // ==========================================
@@ -1067,7 +1111,9 @@ pub fn run() {
             db_list_reminders,
             db_check_due_reminders,
             db_update_reminder,
-            db_delete_reminder
+            db_delete_reminder,
+            get_autostart,
+            set_autostart
         ])
         .setup(move |app| {
             crate::log_step("=== SETUP STARTED ===");
@@ -1178,17 +1224,24 @@ pub fn run() {
             // Set up System Tray
             let tray_setup = (|| -> Result<(), Box<dyn std::error::Error>> {
                 let toggle_show = MenuItemBuilder::with_id("toggle_show", "Show / Hide").build(app)?;
+                let pomodoro_25 = MenuItemBuilder::with_id("pomodoro_25", "Start 25m Pomodoro").build(app)?;
+                let stop_timer = MenuItemBuilder::with_id("stop_timer", "Stop Active Timer").build(app)?;
                 let mode_island = MenuItemBuilder::with_id("mode_island", "Mode: Island").build(app)?;
                 let mode_free = MenuItemBuilder::with_id("mode_free", "Mode: Free Desktop").build(app)?;
+                let quiet_mode = MenuItemBuilder::with_id("quiet_mode", "Toggle Quiet Mode").build(app)?;
                 let settings = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
                 let quit = MenuItemBuilder::with_id("quit", "Quit Mintu").build(app)?;
 
                 let tray_menu = MenuBuilder::new(app)
                     .item(&toggle_show)
                     .separator()
+                    .item(&pomodoro_25)
+                    .item(&stop_timer)
+                    .separator()
                     .item(&mode_island)
                     .item(&mode_free)
                     .separator()
+                    .item(&quiet_mode)
                     .item(&settings)
                     .separator()
                     .item(&quit)
@@ -1218,11 +1271,20 @@ pub fn run() {
                                     }
                                 }
                             }
+                            "pomodoro_25" => {
+                                let _ = app.emit("tray-action", "start-pomodoro");
+                            }
+                            "stop_timer" => {
+                                let _ = app.emit("tray-action", "stop-timer");
+                            }
                             "mode_island" => {
                                 let _ = app.emit("request-mode", "island");
                             }
                             "mode_free" => {
                                 let _ = app.emit("request-mode", "free");
+                            }
+                            "quiet_mode" => {
+                                let _ = app.emit("tray-action", "toggle-quiet");
                             }
                             "settings" => {
                                 let _ = app.emit("open-settings", ());
