@@ -4,6 +4,8 @@
  * hibernation, clock shifts, and app restarts.
  */
 
+import { soundEngine } from "../../core/SoundEngine.ts";
+
 export type TimerMode = "countdown" | "pomodoro" | "stopwatch";
 export type TimerState = "idle" | "running" | "paused" | "finished";
 export type PomodoroPhase = "focus" | "short_break" | "long_break";
@@ -223,6 +225,7 @@ export class TimerEngine {
 
   private handleTimerFinished(): void {
     this.state = "finished";
+    soundEngine.playChime();
     const date = new Date(this.targetEndTime || Date.now());
     const hh = String(date.getHours()).padStart(2, "0");
     const mm = String(date.getMinutes()).padStart(2, "0");
@@ -242,6 +245,7 @@ export class TimerEngine {
     let nextPhase: PomodoroPhase = "short_break";
 
     if (prevPhase === "focus") {
+      soundEngine.playChime();
       this.recordFocusSession(this.totalDurationSec, this.label);
       if (this.pomodoroCount % this.config.sessionsBeforeLongBreak === 0) {
         nextPhase = "long_break";

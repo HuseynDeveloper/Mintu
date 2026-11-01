@@ -39,3 +39,10 @@ D:/mintu-target
 *.tar.gz
 err.txt
 out.txt
+
+# Android keystores and signing credentials
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+

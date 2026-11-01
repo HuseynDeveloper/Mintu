@@ -98,41 +98,64 @@ fn focus_main_window(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MonitorInfo {
+    pub name: Option<String>,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub scale_factor: f64,
+    pub is_primary: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct PowerStatus {
+    pub is_battery: bool,
+    pub battery_percent: u8,
+    pub is_charging: bool,
+}
+
 #[tauri::command]
 fn get_work_area(app: AppHandle) -> Result<ScreenWorkArea, String> {
     if let Some(window) = app.get_webview_window("main") {
-        if let Ok(Some(monitor)) = window.primary_monitor() {
-            let scale = monitor.scale_factor();
-            let mon_pos = monitor.position();
-            let mon_size = monitor.size();
+        #[cfg(target_os = "windows")]
+        {
+            unsafe {
+                use windows_sys::Win32::Graphics::Gdi::{
+                    GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+                };
+                use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+                use windows_sys::Win32::Foundation::POINT;
 
-            #[cfg(target_os = "windows")]
-            {
-                unsafe {
-                    let mut rect = windows_sys::Win32::Foundation::RECT {
-                        left: 0,
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                    };
-                    if windows_sys::Win32::UI::WindowsAndMessaging::SystemParametersInfoW(
-                        windows_sys::Win32::UI::WindowsAndMessaging::SPI_GETWORKAREA,
-                        0,
-                        &mut rect as *mut _ as *mut _,
-                        0,
-                    ) != 0
-                    {
+                let mut pt: POINT = std::mem::zeroed();
+                let _ = GetCursorPos(&mut pt);
+                let hmon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+                if !hmon.is_null() {
+                    let mut mi: MONITORINFO = std::mem::zeroed();
+                    mi.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+                    if GetMonitorInfoW(hmon, &mut mi) != 0 {
+                        let scale = window.current_monitor().ok().flatten()
+                            .or_else(|| window.primary_monitor().ok().flatten())
+                            .map(|m| m.scale_factor())
+                            .unwrap_or(1.0);
+
                         return Ok(ScreenWorkArea {
-                            x: rect.left,
-                            y: rect.top,
-                            width: (rect.right - rect.left) as u32,
-                            height: (rect.bottom - rect.top) as u32,
+                            x: mi.rcWork.left,
+                            y: mi.rcWork.top,
+                            width: (mi.rcWork.right - mi.rcWork.left) as u32,
+                            height: (mi.rcWork.bottom - mi.rcWork.top) as u32,
                             scale_factor: scale,
                         });
                     }
                 }
             }
+        }
 
+        if let Ok(Some(monitor)) = window.current_monitor().or_else(|_| window.primary_monitor()) {
+            let scale = monitor.scale_factor();
+            let mon_pos = monitor.position();
+            let mon_size = monitor.size();
             return Ok(ScreenWorkArea {
                 x: mon_pos.x,
                 y: mon_pos.y,
@@ -142,7 +165,97 @@ fn get_work_area(app: AppHandle) -> Result<ScreenWorkArea, String> {
             });
         }
     }
-    Err("Could not retrieve primary monitor".to_string())
+    Err("Could not retrieve work area".to_string())
+}
+
+#[tauri::command]
+fn get_available_monitors(app: AppHandle) -> Result<Vec<MonitorInfo>, String> {
+    if let Some(window) = app.get_webview_window("main") {
+        if let Ok(monitors) = window.available_monitors() {
+            let primary = window.primary_monitor().ok().flatten();
+            let prim_pos = primary.as_ref().map(|p| p.position().clone());
+            let list = monitors.into_iter().map(|m| {
+                let pos = m.position();
+                let size = m.size();
+                let is_prim = prim_pos.as_ref().map(|pp| pp.x == pos.x && pp.y == pos.y).unwrap_or(false);
+                MonitorInfo {
+                    name: m.name().map(|s| s.to_string()),
+                    x: pos.x,
+                    y: pos.y,
+                    width: size.width,
+                    height: size.height,
+                    scale_factor: m.scale_factor(),
+                    is_primary: is_prim,
+                }
+            }).collect();
+            return Ok(list);
+        }
+    }
+    Ok(Vec::new())
+}
+
+#[tauri::command]
+fn is_store_package() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        unsafe {
+            type GetCurrentPackageFamilyNameFn = unsafe extern "system" fn(*mut u32, *mut u16) -> i32;
+            let kernel32 = windows_sys::Win32::System::LibraryLoader::GetModuleHandleA(b"kernel32.dll\0".as_ptr());
+            if !kernel32.is_null() {
+                let func = windows_sys::Win32::System::LibraryLoader::GetProcAddress(kernel32, b"GetCurrentPackageFamilyName\0".as_ptr());
+                if let Some(f) = func {
+                    let get_pkg_fn: GetCurrentPackageFamilyNameFn = std::mem::transmute(f);
+                    let mut length: u32 = 0;
+                    let rc = get_pkg_fn(&mut length, std::ptr::null_mut());
+                    return rc == 122; // ERROR_INSUFFICIENT_BUFFER
+                }
+            }
+        }
+    }
+    false
+}
+
+#[tauri::command]
+fn purge_memory() -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    {
+        unsafe {
+            use windows_sys::Win32::System::ProcessStatus::EmptyWorkingSet;
+            use windows_sys::Win32::System::Threading::GetCurrentProcess;
+            EmptyWorkingSet(GetCurrentProcess());
+        }
+    }
+    Ok(true)
+}
+
+#[tauri::command]
+fn get_power_status() -> Result<PowerStatus, String> {
+    #[cfg(target_os = "windows")]
+    {
+        unsafe {
+            use windows_sys::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
+            let mut status: SYSTEM_POWER_STATUS = std::mem::zeroed();
+            if GetSystemPowerStatus(&mut status) != 0 {
+                let is_battery = status.ACLineStatus == 0;
+                let is_charging = (status.BatteryFlag & 8) != 0;
+                let pct = if status.BatteryLifePercent <= 100 {
+                    status.BatteryLifePercent
+                } else {
+                    100
+                };
+                return Ok(PowerStatus {
+                    is_battery,
+                    battery_percent: pct,
+                    is_charging,
+                });
+            }
+        }
+    }
+    Ok(PowerStatus {
+        is_battery: false,
+        battery_percent: 100,
+        is_charging: true,
+    })
 }
 
 #[tauri::command]
@@ -1113,7 +1226,11 @@ pub fn run() {
             db_update_reminder,
             db_delete_reminder,
             get_autostart,
-            set_autostart
+            set_autostart,
+            get_available_monitors,
+            is_store_package,
+            purge_memory,
+            get_power_status
         ])
         .setup(move |app| {
             crate::log_step("=== SETUP STARTED ===");

@@ -34,6 +34,8 @@ import { voiceManager } from "../voice/VoiceManager";
 import { xpManager } from "../gamification/XPManager";
 import { smartClipboard } from "../clipboard/SmartClipboard";
 import { updateChecker } from "../updater/UpdateChecker";
+import { soundEngine } from "../core/SoundEngine";
+import { tryEvaluateInline } from "../core/InlineEvaluator";
 
 export interface NotificationPayload {
   icon?: string;
@@ -63,6 +65,13 @@ export class IslandContentRenderer {
   private slotTranslate!: HTMLElement;
   private slotToolApproval!: HTMLElement;
   private slotCloudConsent!: HTMLElement;
+  private slotMemo!: HTMLElement;
+  private memoTextarea!: HTMLTextAreaElement;
+  private inlineCalcPill!: HTMLElement;
+  private oneClickSetupCard!: HTMLElement;
+  private healthReminderBanner!: HTMLElement;
+  private idleMusicWave!: HTMLElement;
+  private idlePowerBadge!: HTMLElement;
 
   private currentNotification: NotificationPayload | null = null;
   private isTranslatingFlow: boolean = false;
@@ -72,6 +81,8 @@ export class IslandContentRenderer {
   private clockEl!: HTMLElement;
   private clockInterval: number | null = null;
   private waveformAnimId: number | null = null;
+  private healthTimer: number | null = null;
+  private batteryTimer: number | null = null;
 
   // Attached context chips
   private attachedChipsEl!: HTMLElement;
@@ -154,7 +165,16 @@ export class IslandContentRenderer {
       <!-- SLOT 2: IDLE -->
       <div class="island-slot slot-idle">
         <div class="slot-left-pet-anchor"></div>
-        <div class="idle-clock">10:42</div>
+        <div class="idle-content-row">
+          <div class="idle-clock">10:42</div>
+          <div class="idle-music-wave" id="idle-music-wave" style="display: none;" title="Musiqi oxunur">
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+            <span class="wave-bar"></span>
+          </div>
+          <div class="idle-power-badge" id="idle-power-badge" style="display: none;" title="Batareya"></div>
+        </div>
       </div>
 
       <!-- SLOT 3: NOTIFICATION -->
@@ -277,9 +297,29 @@ export class IslandContentRenderer {
 
           <!-- Scrollable chat body containing greeting, messages, and suggestions -->
           <div class="chat-messages-scroll-area">
+            <!-- 20-20-20 Digital Health Reminder Banner -->
+            <div class="health-reminder-banner" id="health-reminder-banner" style="display: none;">
+              <span id="health-reminder-text">25 dəqiqədir işləyirsiniz. Gözlərinizi 20 saniyə uzağa dikin və su için!</span>
+              <button class="health-reminder-btn" id="btn-health-reminder-done">Oldu (+15 XP)</button>
+            </div>
+
             <!-- Image B Greeting row -->
             <div class="expanded-greeting-row">
               <div class="greeting-heading">How can I help you?</div>
+            </div>
+
+            <!-- One-Click Local AI Setup Card (v0.2.1) -->
+            <div class="one-click-setup-card" id="one-click-setup-card" style="display: none;">
+              <div class="one-click-setup-title">Sürətli Yerli AI Quraşdırma</div>
+              <div class="one-click-setup-desc">Mintu ilə tam offline və şəxsi kompüterinizdə söhbət etmək üçün yüngül və sürətli Qwen 2.5 0.5B (490 MB) modelini 1 kliklə yükləyə bilərsiniz.</div>
+              <div class="one-click-setup-actions">
+                <button class="btn-primary-mint" id="btn-one-click-download">İndi Yüklə (490 MB)</button>
+                <button class="btn-small-action" id="btn-one-click-settings">Digər Modellər</button>
+              </div>
+              <div class="one-click-progress-wrap" id="one-click-progress-wrap" style="display: none;">
+                <div class="one-click-progress-bar" id="one-click-progress-bar"></div>
+              </div>
+              <div class="one-click-progress-label" id="one-click-progress-label" style="display: none; font-size: 10px; color: #9ca3af;">0%</div>
             </div>
 
             <!-- Message list container -->
@@ -296,6 +336,7 @@ export class IslandContentRenderer {
 
           <!-- Input row (Image E 3) -->
           <div class="expanded-input-row">
+            <div class="inline-calc-pill" id="inline-calc-pill" style="display: none;"></div>
             <div class="chat-attached-chips" id="chat-attached-chips"></div>
             <div class="chat-input-pill">
               <input type="text" placeholder="Type a message or speak..." class="chat-text-input" />
@@ -1004,6 +1045,25 @@ export class IslandContentRenderer {
           <button class="btn-consent-allow" id="btn-cloud-consent-allow">Allow Cloud</button>
         </div>
       </div>
+
+      <!-- SLOT 15: QUICK MEMO (SCRATCHPAD) -->
+      <div class="island-slot slot-memo">
+        <div class="memo-container">
+          <div class="memo-header">
+            <span class="memo-title">Sürətli Qeyd (Scratchpad)</span>
+            <div class="memo-header-actions">
+              <span class="memo-count" id="memo-char-count">0 simvol</span>
+              <button class="icon-btn" id="btn-memo-close" title="Bağla">✕</button>
+            </div>
+          </div>
+          <textarea class="memo-textarea" id="memo-textarea" placeholder="Buraya ani qeydlərinizi yazın (avtomatik yadda saxlanılır)..."></textarea>
+          <div class="memo-actions">
+            <button class="btn-small-action" id="btn-memo-copy">Panoya Kopyala</button>
+            <button class="btn-small-action" id="btn-memo-send-ai">Mintu ilə Təhlil Et</button>
+            <button class="btn-small-action danger" id="btn-memo-clear">Təmizlə</button>
+          </div>
+        </div>
+      </div>
     `;
 
     this.slotCollapsed = this.container.querySelector(".slot-collapsed")!;
@@ -1020,9 +1080,17 @@ export class IslandContentRenderer {
     this.slotAnswerReady = this.container.querySelector(".slot-answer-ready")!;
     this.slotReading = this.container.querySelector(".slot-reading")!;
     this.slotTranslate = this.container.querySelector(".slot-translate")!;
+    this.slotMemo = this.container.querySelector(".slot-memo")!;
+    this.memoTextarea = this.container.querySelector("#memo-textarea") as HTMLTextAreaElement;
+    this.inlineCalcPill = this.container.querySelector("#inline-calc-pill")!;
+    this.oneClickSetupCard = this.container.querySelector("#one-click-setup-card")!;
+    this.healthReminderBanner = this.container.querySelector("#health-reminder-banner")!;
+    this.idleMusicWave = this.container.querySelector("#idle-music-wave")!;
+    this.idlePowerBadge = this.container.querySelector("#idle-power-badge")!;
     this.attachedChipsEl = this.container.querySelector("#chat-attached-chips")!;
 
     this.clockEl = this.container.querySelector(".idle-clock")!;
+    this.clockEl.addEventListener("click", () => this.showRandomDailyTip());
 
     // Chat elements
     this.chatMessagesEl = this.slotExpanded.querySelector(".chat-messages-container")!;
@@ -1159,9 +1227,120 @@ export class IslandContentRenderer {
       }
     });
 
-    // Draft persistence on typing
+    // Draft persistence on typing & Inline Calculator / Converter
+    let lastEvaluatedVal: string | null = null;
     this.chatInputEl.addEventListener("input", () => {
       chatManager.setDraft(this.chatInputEl.value);
+      const q = this.chatInputEl.value;
+      const res = tryEvaluateInline(q);
+      if (res && this.inlineCalcPill) {
+        lastEvaluatedVal = res.replace(/^=\s*/, "").replace(/\s*\(.*\)$/, "").trim();
+        this.inlineCalcPill.textContent = `${res} (Kliklə və ya Tab ilə daxil et)`;
+        this.inlineCalcPill.style.display = "flex";
+      } else {
+        lastEvaluatedVal = null;
+        if (this.inlineCalcPill) this.inlineCalcPill.style.display = "none";
+      }
+    });
+
+    this.inlineCalcPill?.addEventListener("click", () => {
+      if (lastEvaluatedVal) {
+        this.chatInputEl.value = lastEvaluatedVal;
+        if (this.inlineCalcPill) this.inlineCalcPill.style.display = "none";
+        this.chatInputEl.focus();
+      }
+    });
+
+    this.chatInputEl.addEventListener("keydown", (e) => {
+      if (e.key === "Tab" && lastEvaluatedVal && this.inlineCalcPill?.style.display !== "none") {
+        e.preventDefault();
+        this.chatInputEl.value = lastEvaluatedVal;
+        this.inlineCalcPill.style.display = "none";
+      }
+    });
+
+    // One-Click Model Setup Card (v0.2.1)
+    const oneClickDownloadBtn = this.slotExpanded.querySelector("#btn-one-click-download") as HTMLButtonElement;
+    const oneClickSettingsBtn = this.slotExpanded.querySelector("#btn-one-click-settings") as HTMLButtonElement;
+    const oneClickProgressWrap = this.slotExpanded.querySelector("#one-click-progress-wrap") as HTMLElement;
+    const oneClickProgressBar = this.slotExpanded.querySelector("#one-click-progress-bar") as HTMLElement;
+    const oneClickProgressLabel = this.slotExpanded.querySelector("#one-click-progress-label") as HTMLElement;
+
+    oneClickDownloadBtn?.addEventListener("click", () => {
+      oneClickDownloadBtn.disabled = true;
+      oneClickDownloadBtn.textContent = "Yüklənir...";
+      if (oneClickProgressWrap) oneClickProgressWrap.style.display = "block";
+      if (oneClickProgressLabel) oneClickProgressLabel.style.display = "block";
+
+      modelManager.startDownload("qwen2.5-0.5b");
+      const unbind = eventBus.on("model-download-progress", (p: DownloadProgress) => {
+        if (p.model_id !== "qwen2.5-0.5b") return;
+        const pct = Math.round((p.downloaded_bytes / (p.total_bytes || 1)) * 100);
+        if (oneClickProgressBar) oneClickProgressBar.style.width = `${pct}%`;
+        if (oneClickProgressLabel) {
+          oneClickProgressLabel.textContent = `${pct}% (${(p.downloaded_bytes / (1024 * 1024)).toFixed(1)} MB / ${(p.total_bytes / (1024 * 1024)).toFixed(1)} MB)`;
+        }
+        if (p.status === "completed") {
+          unbind();
+          soundEngine.playCuteChirp("level-up");
+          if (this.oneClickSetupCard) this.oneClickSetupCard.style.display = "none";
+          eventBus.emit("pet:say", { text: "Qwen 2.5 0.5B modeli quraşdırıldı! Artıq sizinlə offline söhbət etməyə hazıram." });
+        }
+      });
+    });
+
+    oneClickSettingsBtn?.addEventListener("click", () => {
+      this.switchSubView("settings");
+    });
+
+    // Quick Memo (Scratchpad) Buttons
+    const memoCloseBtn = this.slotMemo.querySelector("#btn-memo-close");
+    const memoCopyBtn = this.slotMemo.querySelector("#btn-memo-copy") as HTMLButtonElement;
+    const memoSendAiBtn = this.slotMemo.querySelector("#btn-memo-send-ai");
+    const memoClearBtn = this.slotMemo.querySelector("#btn-memo-clear");
+
+    this.memoTextarea?.addEventListener("input", () => {
+      localStorage.setItem("mintu_quick_memo", this.memoTextarea.value);
+      this.updateMemoCharCount();
+    });
+
+    memoCloseBtn?.addEventListener("click", () => {
+      if (this.onRequestCollapse) this.onRequestCollapse();
+    });
+
+    memoCopyBtn?.addEventListener("click", () => {
+      if (this.memoTextarea?.value) {
+        navigator.clipboard.writeText(this.memoTextarea.value).then(() => {
+          soundEngine.playCuteChirp("click");
+          if (memoCopyBtn) {
+            memoCopyBtn.textContent = "Kopyalandı!";
+            setTimeout(() => { if (memoCopyBtn) memoCopyBtn.textContent = "Panoya Kopyala"; }, 2000);
+          }
+        });
+      }
+    });
+
+    memoSendAiBtn?.addEventListener("click", () => {
+      const val = this.memoTextarea?.value?.trim();
+      if (val) {
+        this.addAttachedChip({
+          type: "code",
+          label: "Qeyd",
+          data: val,
+          appName: "Scratchpad",
+        });
+        this.switchSubView("chat");
+        this.onRequestResize?.(440, 440);
+        eventBus.emit("island:request-state", "expanded");
+      }
+    });
+
+    memoClearBtn?.addEventListener("click", () => {
+      if (this.memoTextarea) {
+        this.memoTextarea.value = "";
+        localStorage.removeItem("mintu_quick_memo");
+        this.updateMemoCharCount();
+      }
     });
 
     // Top action buttons
@@ -2097,6 +2276,9 @@ export class IslandContentRenderer {
       appBridge.setPrivacyBlocklist(apps);
     }
 
+    this.setupHealthTimer();
+    this.setupBatteryCheck();
+
     // 1. Media state
     appBridge.listenToEvent<any>("media-state-changed", (media) => {
       this.updateMusicUi(media);
@@ -2125,6 +2307,10 @@ export class IslandContentRenderer {
     appBridge.listenToEvent<string>("hotkey-triggered", (action) => {
       if (action === "ask") {
         this.handleHotkeyAsk();
+      } else if (action === "quick-note") {
+        this.handleQuickNote();
+      } else if (action === "instant-translate") {
+        this.handleInstantTranslate();
       } else if (action === "capture") {
         const consent = localStorage.getItem("mintu_context_consent");
         if (consent !== "granted") {
@@ -2374,6 +2560,9 @@ export class IslandContentRenderer {
 
     this.isMusicPlaying = !!media.is_playing;
     this.updatePlayPauseIcon(this.isMusicPlaying);
+    if (this.idleMusicWave) {
+      this.idleMusicWave.style.display = this.isMusicPlaying ? "flex" : "none";
+    }
 
     if (media.is_playing) {
       activityManager.push({
@@ -3182,6 +3371,14 @@ export class IslandContentRenderer {
 
     const target = this.slotExpanded.querySelector(`.subview-${view}`);
     if (target) target.classList.add("active");
+
+    if (view === "chat") {
+      const installed = modelManager.getInstalledModels();
+      const hasCloud = cloudProviderManager.getActiveProviderId() !== "local";
+      if (this.oneClickSetupCard) {
+        this.oneClickSetupCard.style.display = (installed.length === 0 && !hasCloud) ? "flex" : "none";
+      }
+    }
 
     if (view === "settings") {
       this.populateModelSelects();
@@ -3996,6 +4193,8 @@ export class IslandContentRenderer {
         return this.slotToolApproval.querySelector(".slot-left-pet-anchor");
       case "cloud-consent":
         return this.slotCloudConsent.querySelector(".slot-left-pet-anchor");
+      case "memo":
+        return this.slotIdle.querySelector(".slot-left-pet-anchor");
       default:
         return null;
     }
@@ -4018,6 +4217,7 @@ export class IslandContentRenderer {
       this.slotTranslate,
       this.slotToolApproval,
       this.slotCloudConsent,
+      this.slotMemo,
     ];
 
     let target: HTMLElement;
@@ -4080,6 +4280,11 @@ export class IslandContentRenderer {
         break;
       case "cloud-consent":
         target = this.slotCloudConsent;
+        break;
+      case "memo":
+        target = this.slotMemo;
+        this.initMemoView();
+        setTimeout(() => this.memoTextarea?.focus(), 150);
         break;
       default:
         target = this.slotIdle;
@@ -4314,9 +4519,103 @@ export class IslandContentRenderer {
     this.waveformAnimId = requestAnimationFrame(animate);
   }
 
+  private initMemoView(): void {
+    if (!this.memoTextarea) return;
+    const saved = localStorage.getItem("mintu_quick_memo") || "";
+    this.memoTextarea.value = saved;
+    this.updateMemoCharCount();
+  }
+
+  private updateMemoCharCount(): void {
+    const countEl = this.slotMemo.querySelector("#memo-char-count");
+    if (countEl && this.memoTextarea) {
+      const len = this.memoTextarea.value.length;
+      const words = this.memoTextarea.value.trim() ? this.memoTextarea.value.trim().split(/\s+/).length : 0;
+      countEl.textContent = `${len} simvol · ${words} söz`;
+    }
+  }
+
+  public handleQuickNote(): void {
+    soundEngine.playCuteChirp("click");
+    this.onRequestResize?.(380, 260);
+    eventBus.emit("island:request-state", "memo");
+    this.showSlot("memo");
+  }
+
+  public async handleInstantTranslate(): Promise<void> {
+    soundEngine.playCuteChirp("click");
+    let textToTranslate = "";
+    try {
+      const clip = await appBridge.readClipboardText();
+      if (clip && clip.trim()) {
+        textToTranslate = clip.trim();
+      }
+    } catch {}
+
+    if (textToTranslate) {
+      this.currentTranslationSourceText = textToTranslate;
+      this.isTranslatingFlow = true;
+      const detected = detectLanguage(textToTranslate);
+      this.currentDetectedLang = detected.name;
+      this.startTranslateFlow(textToTranslate);
+    } else {
+      this.isTranslatingFlow = true;
+      appBridge.openRegionCapture();
+    }
+  }
+
+  private setupHealthTimer(): void {
+    this.healthTimer = window.setInterval(() => {
+      if (this.healthReminderBanner) {
+        this.healthReminderBanner.style.display = "flex";
+        soundEngine.playCuteChirp("happy");
+      }
+    }, 25 * 60 * 1000);
+
+    const doneBtn = this.slotExpanded.querySelector("#btn-health-reminder-done");
+    doneBtn?.addEventListener("click", () => {
+      this.healthReminderBanner.style.display = "none";
+      xpManager.addXP(15, "20-20-20 Sağlamlıq Fasiləsi");
+      soundEngine.playCuteChirp("level-up");
+    });
+  }
+
+  private setupBatteryCheck(): void {
+    const check = async () => {
+      const pwr = await appBridge.getPowerStatus();
+      if (this.idlePowerBadge) {
+        if (pwr.is_battery) {
+          this.idlePowerBadge.textContent = `${pwr.battery_percent}% batareya`;
+          this.idlePowerBadge.style.display = "inline-block";
+        } else {
+          this.idlePowerBadge.style.display = "none";
+        }
+      }
+    };
+    check();
+    this.batteryTimer = window.setInterval(check, 30000);
+  }
+
+  public showRandomDailyTip(): void {
+    const tips = [
+      "Hər 25 dəqiqədən bir gözlərinizi dincəldin və qamətinizi düzəldin!",
+      "Git repozitoriyalarında tez-tez kiçik commit-lər etmək sonradan rebase və merge işini asanlaşdırır.",
+      "Kodu sadə saxlayın: 'Premature optimization is the root of all evil' — Donald Knuth.",
+      "Mintu-nu Ctrl + Shift + Space ilə dərhal aktivləşdirə bilərsiniz!",
+      "Ctrl + Shift + N ilə sürətli qeydlərinizi götürə bilərsiniz.",
+      "Fokus sessiyası bitdikdə Mintu sizinlə səviyyə atlayır və yeni aksesuarlar qazanır!",
+      "Həmişə funksiyalarınızı tək bir məqsəd üçün yazın (Single Responsibility Principle)."
+    ];
+    const pick = tips[Math.floor(Math.random() * tips.length)];
+    soundEngine.playCuteChirp("happy");
+    eventBus.emit("pet:say", { text: pick });
+  }
+
   destroy(): void {
     if (this.clockInterval) clearInterval(this.clockInterval);
     if (this.waveformAnimId) cancelAnimationFrame(this.waveformAnimId);
+    if (this.healthTimer) clearInterval(this.healthTimer);
+    if (this.batteryTimer) clearInterval(this.batteryTimer);
   }
 }
 

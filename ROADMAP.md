@@ -60,6 +60,28 @@ Mintu is an open-source (MIT) desktop companion living in a Dynamic Island with 
 
 ---
 
+## Release v0.2.1: Polish, Fixes & Enhanced Companion Experience (Completed)
+
+### Bug Fixes & Architecture Hardening
+- [x] **Multi-Monitor Work Area Detection**: Upgraded `get_work_area` to detect the exact monitor where the window/cursor resides using Win32 `MonitorFromPoint` and `GetMonitorInfoW` (`rcWork`).
+- [x] **MSIX Store Package Compliance**: Integrated `is_store_package` detection to respect Microsoft Store update policies and suppress external GitHub download notifications for Store users.
+- [x] **Adaptive SMTC Polling**: Replaced static 400ms polling with dynamic backoff (400ms when playing, 1200ms when paused, 2000ms when idle) saving background CPU and battery.
+- [x] **Clean Subprocess Termination**: Bound `llama-server.exe` to a Windows `JobObject` configured with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` to guarantee zero orphaned background processes.
+
+### New Features & Utilities
+- [x] **New Primary Shortcut (`Ctrl + Shift + Space`)**: Bound quick AI chat and context sensing to `Ctrl + Shift + Space`.
+- [x] **Quick Scratchpad (`Ctrl + Shift + N`)**: Built-in minimalist notepad inside Dynamic Island with auto-save, character count, clipboard copy, and AI analysis.
+- [x] **Instant Translator (`Ctrl + Shift + T`)**: One-click quick translation pill for selected text or clipboard content.
+- [x] **Dynamic Audio Waveform**: Animated frequency equalizer bars inside Dynamic Island and Idle slot during SMTC audio playback.
+- [x] **One-Click AI Setup**: In-island prompt and mini progress bar for downloading Qwen 2.5 0.5B (490 MB) without navigating to Settings.
+- [x] **Procedural Sound Engine**: Synthesized Web Audio API bells for Pomodoro/Timer finish, companion chirps, and ambient focus noise (rain/white noise).
+- [x] **Inline Calculator & Converter**: Real-time math expression and currency/unit converter in chat input pill.
+- [x] **Digital Wellbeing (20-20-20 Reminder)**: Ergonomic health reminder with +15 XP reward.
+- [x] **One-Click Memory Purge**: Process working set optimization button in status card.
+- [x] **Battery Saver Detection**: Battery percentage indicator and polling throttle when on battery power.
+
+---
+
 ## Milestone 9: Community & Open Plugin Ecosystem (Planned)
 
 ### 9.1 Open Plugin Framework

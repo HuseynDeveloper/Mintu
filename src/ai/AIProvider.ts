@@ -312,7 +312,7 @@ export class MockAIProvider implements AIProvider {
       if (prompt.includes("klavis") || prompt.includes("ayar") || prompt.includes("qısayol")) {
         return {
           emotion: "curious",
-          text: `**Mintu Qısayolları və Ayarları:**\n\n- **Ctrl + Alt + Space**: Aktiv pəncərənin və ya seçilmiş mətnin kontekstini Mintu-ya göndər\n- **Ctrl + Alt + S**: Ekranda düzbucaqlı sahə seçimi (Screen Region Capture) və OCR ilə mətn oxuma\n- **Ctrl + Alt + M**: Dynamic Island və Masaüstündə sərbəst gəzən Mintu (Free Mode) arasında keçid\n- **Ctrl + Shift + D**: Developer və Hit-Test panelini aç/bağla\n- **Esc**: Island kartını dərhal yığcam hala gətir (Collapse)\n\nAyarları dəyişmək üçün yuxarıdakı tənzimləmə düyməsini klikləyə bilərsiniz.`,
+          text: `**Mintu Qısayolları və Ayarları:**\n\n- **Ctrl + Shift + Space**: Mintu AI Söhbətini aç və ya aktiv pəncərənin kontekstini göndər\n- **Ctrl + Shift + N**: Sürətli Qeyd (Scratchpad / Memo) pəncərəsini aç\n- **Ctrl + Shift + T**: Seçilmiş mətnin və ya panonun anında tərcüməsi\n- **Ctrl + Alt + S**: Ekranda düzbucaqlı sahə seçimi (Screen Region Capture) və OCR ilə mətn oxuma\n- **Ctrl + Alt + M**: Dynamic Island və Masaüstündə sərbəst gəzən Mintu (Free Mode) arasında keçid\n- **Ctrl + Shift + D**: Developer və Hit-Test panelini aç/bağla\n- **Esc**: Island kartını dərhal yığcam hala gətir (Collapse)\n\nAyarları dəyişmək üçün yuxarıdakı tənzimləmə düyməsini klikləyə bilərsiniz.`,
         };
       }
 
@@ -394,7 +394,7 @@ export class MockAIProvider implements AIProvider {
     if (prompt.includes("who are you") || prompt.includes("about") || prompt.includes("what can you do")) {
       return {
         emotion: "happy",
-        text: `I'm **Mintu**, an animated desktop companion living inside your Dynamic Island.\n\nHere is what I can do for you:\n- **Local AI Chat:** Answer questions, explain code, write scripts, and converse privately on your machine.\n- **Screen OCR:** Press \`Ctrl+Alt+S\` to crop any area of your screen and extract the text instantly.\n- **Context Sensing:** Press \`Ctrl+Alt+Space\` to inspect your active window or selection.\n- **Music & Media:** Control Spotify, YouTube, or Windows Media players directly from the Island.\n- **Free Mode:** Double-click me or press \`Ctrl+Alt+M\` and I'll jump down to roam your desktop with real physics!`,
+        text: `I'm **Mintu**, an animated desktop companion living inside your Dynamic Island.\n\nHere is what I can do for you:\n- **Local AI Chat:** Press \`Ctrl+Shift+Space\` to converse, ask questions, and explain code.\n- **Quick Scratchpad:** Press \`Ctrl+Shift+N\` for instant notes and memo.\n- **Instant Translate:** Press \`Ctrl+Shift+T\` to translate any selection.\n- **Screen OCR:** Press \`Ctrl+Alt+S\` to crop any area of your screen and extract text.\n- **Music & Media:** Control Spotify, YouTube, or Windows Media players directly from the Island.\n- **Free Mode:** Double-click me or press \`Ctrl+Alt+M\` and I'll jump down to roam your desktop with real physics!`,
       };
     }
 

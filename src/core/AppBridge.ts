@@ -189,6 +189,46 @@ class AppBridge {
       return false;
     }
   }
+
+  async readClipboardText(): Promise<string> {
+    try {
+      return await invoke("tools_read_clipboard");
+    } catch {
+      return await navigator.clipboard.readText().catch(() => "");
+    }
+  }
+
+  async isStorePackage(): Promise<boolean> {
+    try {
+      return await invoke("is_store_package");
+    } catch {
+      return false;
+    }
+  }
+
+  async purgeMemory(): Promise<boolean> {
+    try {
+      return await invoke("purge_memory");
+    } catch {
+      return false;
+    }
+  }
+
+  async getPowerStatus(): Promise<{ is_battery: boolean; battery_percent: number; is_charging: boolean }> {
+    try {
+      return await invoke("get_power_status");
+    } catch {
+      return { is_battery: false, battery_percent: 100, is_charging: true };
+    }
+  }
+
+  async getAvailableMonitors(): Promise<Array<{ name: string | null; x: number; y: number; width: number; height: number; scale_factor: number; is_primary: boolean }>> {
+    try {
+      return await invoke("get_available_monitors");
+    } catch {
+      return [];
+    }
+  }
 }
 
 export interface WalkableWindow {

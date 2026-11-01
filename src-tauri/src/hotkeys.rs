@@ -17,12 +17,14 @@ pub fn start_hotkey_listener(app: AppHandle) {
             const HOTKEY_DEBUG: i32 = 1004;
             const HOTKEY_TRANSLATE_AREA: i32 = 1005;
             const HOTKEY_TRANSLATE_SELECTION: i32 = 1006;
+            const HOTKEY_NOTE: i32 = 1007;
+            const HOTKEY_TRANSLATE_INSTANT: i32 = 1008;
 
             let null_hwnd = std::ptr::null_mut();
 
-            // Ctrl + Alt + Space: Ask Mintu context
-            if RegisterHotKey(null_hwnd, HOTKEY_ASK, MOD_CONTROL | MOD_ALT, VK_SPACE as u32) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Alt+Space");
+            // Ctrl + Shift + Space: Ask Mintu context / Open Chat
+            if RegisterHotKey(null_hwnd, HOTKEY_ASK, MOD_CONTROL | MOD_SHIFT, VK_SPACE as u32) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+Space");
             }
             // Ctrl + Alt + S: Screen Region Capture
             if RegisterHotKey(null_hwnd, HOTKEY_CAPTURE, MOD_CONTROL | MOD_ALT, 0x53) == 0 {
@@ -35,6 +37,14 @@ pub fn start_hotkey_listener(app: AppHandle) {
             // Ctrl + Shift + D: Developer Panel Toggle
             if RegisterHotKey(null_hwnd, HOTKEY_DEBUG, MOD_CONTROL | MOD_SHIFT, 0x44) == 0 {
                 let _ = app.emit("hotkey-conflict", "Ctrl+Shift+D");
+            }
+            // Ctrl + Shift + N: Quick Scratchpad / Memo
+            if RegisterHotKey(null_hwnd, HOTKEY_NOTE, MOD_CONTROL | MOD_SHIFT, 0x4E) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+N");
+            }
+            // Ctrl + Shift + T: Instant Translate
+            if RegisterHotKey(null_hwnd, HOTKEY_TRANSLATE_INSTANT, MOD_CONTROL | MOD_SHIFT, 0x54) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+T");
             }
             // Ctrl + Alt + T: Translate this area (Image E / F flow)
             if RegisterHotKey(null_hwnd, HOTKEY_TRANSLATE_AREA, MOD_CONTROL | MOD_ALT, 0x54) == 0 {
@@ -66,6 +76,12 @@ pub fn start_hotkey_listener(app: AppHandle) {
                         }
                         HOTKEY_TRANSLATE_SELECTION => {
                             let _ = app.emit("hotkey-triggered", "translate-selection");
+                        }
+                        HOTKEY_NOTE => {
+                            let _ = app.emit("hotkey-triggered", "quick-note");
+                        }
+                        HOTKEY_TRANSLATE_INSTANT => {
+                            let _ = app.emit("hotkey-triggered", "instant-translate");
                         }
                         _ => {}
                     }

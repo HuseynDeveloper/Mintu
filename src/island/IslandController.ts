@@ -38,6 +38,7 @@ export const IslandDimensionsPresets: Record<string, IslandDimensions> = {
   translate: { width: 400, height: 260, radius: 28 },
   "tool-approval": { width: 380, height: 114, radius: 28 },
   "cloud-consent": { width: 380, height: 260, radius: 28 },
+  memo: { width: 380, height: 260, radius: 26 },
 };
 
 export class IslandController {
@@ -171,6 +172,17 @@ export class IslandController {
         this.setState("idle");
       }
     });
+
+    // Double-click to toggle collapse or return to idle
+    this.el.addEventListener("dblclick", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button") || target.closest("input") || target.closest("textarea")) return;
+      if (this.currentState === "idle" || this.currentState === "peek") {
+        this.setState("collapsed");
+      } else if (this.currentState === "collapsed") {
+        this.setState("idle");
+      }
+    });
   }
 
   getState(): string {
@@ -272,6 +284,9 @@ export class IslandController {
         break;
       case "cloud-consent":
         this.animController.setState("curious", 0.3);
+        break;
+      case "memo":
+        this.animController.setState("think", 0.3);
         break;
       default:
         this.animController.setState("idle");

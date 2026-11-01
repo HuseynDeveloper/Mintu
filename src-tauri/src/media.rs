@@ -76,7 +76,17 @@ impl MediaManager {
 
         tauri::async_runtime::spawn(async move {
             loop {
-                tokio::time::sleep(Duration::from_millis(400)).await;
+                let sleep_ms = {
+                    let lock = last_state_clone.lock().unwrap();
+                    if lock.is_playing {
+                        400
+                    } else if lock.has_session {
+                        1200
+                    } else {
+                        2000
+                    }
+                };
+                tokio::time::sleep(Duration::from_millis(sleep_ms)).await;
 
                 if let Ok(state) = provider_clone.query_state() {
                     let changed = {

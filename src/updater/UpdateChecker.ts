@@ -4,6 +4,7 @@
  */
 
 import { eventBus } from "../core/EventBus.ts";
+import { appBridge } from "../core/AppBridge.ts";
 
 export interface UpdateInfo {
   available: boolean;
@@ -12,10 +13,11 @@ export interface UpdateInfo {
   releaseUrl: string;
   releaseNotes?: string;
   publishedAt?: string;
+  isStoreManaged?: boolean;
 }
 
 export class UpdateChecker {
-  public static readonly CURRENT_VERSION = "0.2.0";
+  public static readonly CURRENT_VERSION = "0.2.1";
   public static readonly GITHUB_REPO = "HuseynDeveloper/Mintu";
 
   public getCurrentVersion(): string {
@@ -48,6 +50,20 @@ export class UpdateChecker {
 
   public async checkForUpdates(): Promise<UpdateInfo> {
     this.lastCheckTime = Date.now();
+
+    const isStore = await appBridge.isStorePackage();
+    if (isStore) {
+      const storeResult: UpdateInfo = {
+        available: false,
+        currentVersion: UpdateChecker.CURRENT_VERSION,
+        latestVersion: UpdateChecker.CURRENT_VERSION,
+        releaseUrl: "ms-windows-store://pdp/?productid=9N2JXZ3RXX8K",
+        releaseNotes: "Mintu Microsoft Store tərəfindən avtomatik idarə olunur və yenilənir.",
+        isStoreManaged: true,
+      };
+      this.cachedUpdate = storeResult;
+      return storeResult;
+    }
 
     const url = `https://api.github.com/repos/${UpdateChecker.GITHUB_REPO}/releases/latest`;
     const resp = await fetch(url, {

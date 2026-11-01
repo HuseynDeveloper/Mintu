@@ -6,6 +6,35 @@ use tauri::{AppHandle, Manager};
 use tokio::process::Child;
 use tokio::sync::Mutex;
 
+
+
+#[cfg(target_os = "windows")]
+fn get_or_create_kill_job() -> windows_sys::Win32::Foundation::HANDLE {
+    use std::sync::OnceLock;
+    use windows_sys::Win32::System::JobObjects::{
+        CreateJobObjectW, SetInformationJobObject,
+        JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    };
+
+    static JOB: OnceLock<isize> = OnceLock::new();
+    let val = *JOB.get_or_init(|| unsafe {
+        let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+        if !job.is_null() {
+            let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            SetInformationJobObject(
+                job,
+                JobObjectExtendedLimitInformation,
+                &info as *const _ as *const _,
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            );
+        }
+        job as isize
+    });
+    val as windows_sys::Win32::Foundation::HANDLE
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SidecarInfo {
     pub status: String, // "stopped" | "starting" | "ready" | "idle_unloaded" | "error"
@@ -194,6 +223,17 @@ impl SidecarManager {
         let child = cmd
             .spawn()
             .map_err(|e| format!("Failed to spawn llama-server: {}", e))?;
+
+        #[cfg(target_os = "windows")]
+        if let Some(raw_handle) = child.raw_handle() {
+            let job = get_or_create_kill_job();
+            if !job.is_null() {
+                unsafe {
+                    use windows_sys::Win32::System::JobObjects::AssignProcessToJobObject;
+                    let _ = AssignProcessToJobObject(job, raw_handle as _);
+                }
+            }
+        }
 
         {
             let mut state = self.inner.lock().await;

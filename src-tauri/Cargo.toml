@@ -1,6 +1,6 @@
 [package]
 name = "mintu"
-version = "0.2.0"
+version = "0.2.1"
 description = "A living desktop companion with a Dynamic Island"
 authors = ["Mintu Contributors"]
 edition = "2021"
@@ -37,7 +37,11 @@ windows-sys = { version = "0.59", features = [
     "Win32_UI_Accessibility",
     "Win32_UI_Shell",
     "Win32_Security_Credentials",
-    "Win32_System_Diagnostics_ToolHelp"
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_JobObjects",
+    "Win32_System_Power",
+    "Win32_System_LibraryLoader",
+    "Win32_System_ProcessStatus"
 ] }
 windows = { version = "0.58", features = [
     "Media_Control",

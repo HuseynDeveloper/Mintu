@@ -2,6 +2,8 @@ import { IslandModule, ModuleContext } from "../types";
 import { modelManager } from "../../ai/ModelManager";
 import { cloudProviderManager } from "../../ai/adapters/CloudProviderManager";
 import { chatManager } from "../../ai/ChatManager";
+import { appBridge } from "../../core/AppBridge.ts";
+import { soundEngine } from "../../core/SoundEngine.ts";
 
 export type StatusWidgetId = "clock" | "battery" | "system_load" | "disk" | "network" | "ai_status";
 
@@ -398,6 +400,10 @@ export class StatusModule implements IslandModule {
             <div style="margin-top: 6px; display: flex; justify-content: center;">
               ${renderSparkline(this.cpuHistory, "#10b981", 100)}
             </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+              <button id="btn-purge-ram" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; color: #38bdf8; font-size: 10px; padding: 2px 8px; cursor: pointer;">RAM Təmizlə</button>
+              <span id="ram-purge-status" style="font-size: 10px; color: #9ca3af;"></span>
+            </div>
           </div>
 
           <!-- Battery -->
@@ -436,6 +442,20 @@ export class StatusModule implements IslandModule {
         </div>
       </div>
     `;
+
+    container.querySelector("#btn-purge-ram")?.addEventListener("click", async () => {
+      const statusEl = container.querySelector("#ram-purge-status") as HTMLElement;
+      try {
+        await appBridge.purgeMemory();
+        soundEngine.playPurgeSound();
+        if (statusEl) {
+          statusEl.textContent = "Optimizasiya edildi!";
+          setTimeout(() => {
+            if (statusEl) statusEl.textContent = "";
+          }, 2500);
+        }
+      } catch {}
+    });
 
     container.querySelector("#btn-pin-widget")?.addEventListener("click", () => {
       if (isPinned) {
