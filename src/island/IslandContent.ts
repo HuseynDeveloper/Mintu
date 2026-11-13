@@ -36,6 +36,7 @@ import { smartClipboard } from "../clipboard/SmartClipboard";
 import { updateChecker } from "../updater/UpdateChecker";
 import { soundEngine } from "../core/SoundEngine";
 import { tryEvaluateInline } from "../core/InlineEvaluator";
+import { i18n, SupportedLanguage } from "../core/i18n";
 
 export interface NotificationPayload {
   icon?: string;
@@ -114,6 +115,7 @@ export class IslandContentRenderer {
     this.container = document.createElement("div");
     this.container.className = "island-content-container";
     this.initSlots();
+    this.applyUiTranslations(i18n.getLang());
     this.initModules();
     this.startClock();
     this.initAIIntegration();
@@ -290,7 +292,7 @@ export class IslandContentRenderer {
 
           <!-- Update Available Banner (Milestone 8) -->
           <div class="mintu-update-banner" id="mintu-update-banner" style="display: none;">
-            <span id="mintu-update-text">Mintu v0.1.3 hazırdır!</span>
+            <span id="mintu-update-text">Mintu v0.2.1 hazırdır!</span>
             <button class="btn-update-action" id="btn-mintu-update-open">Yenilə</button>
             <button class="btn-update-close" id="btn-mintu-update-close">✕</button>
           </div>
@@ -305,7 +307,7 @@ export class IslandContentRenderer {
 
             <!-- Image B Greeting row -->
             <div class="expanded-greeting-row">
-              <div class="greeting-heading">How can I help you?</div>
+              <div class="greeting-heading" id="chat-greeting-heading">How can I help you?</div>
             </div>
 
             <!-- One-Click Local AI Setup Card (v0.2.1) -->
@@ -327,10 +329,10 @@ export class IslandContentRenderer {
 
             <!-- Image B Suggestion chips row -->
             <div class="expanded-chips-row">
-              <button class="chip-btn" data-chip="Check Tasks">Check Tasks</button>
-              <button class="chip-btn" data-chip="Ask AI">Ask AI</button>
-              <button class="chip-btn" data-chip="Explain code">Explain code</button>
-              <button class="chip-btn" data-chip="Tell a joke">Tell a joke</button>
+              <button class="chip-btn" id="chip-check-tasks" data-chip="Check Tasks">Check Tasks</button>
+              <button class="chip-btn" id="chip-ask-ai" data-chip="Ask AI">Ask AI</button>
+              <button class="chip-btn" id="chip-explain-code" data-chip="Explain code">Explain code</button>
+              <button class="chip-btn" id="chip-tell-joke" data-chip="Tell a joke">Tell a joke</button>
             </div>
           </div>
 
@@ -339,7 +341,7 @@ export class IslandContentRenderer {
             <div class="inline-calc-pill" id="inline-calc-pill" style="display: none;"></div>
             <div class="chat-attached-chips" id="chat-attached-chips"></div>
             <div class="chat-input-pill">
-              <input type="text" placeholder="Type a message or speak..." class="chat-text-input" />
+              <input type="text" placeholder="Type a message or speak..." class="chat-text-input" id="chat-user-input" />
               <button class="chat-mic-btn" id="chat-mic-btn" title="Voice Input / Click or hold to talk">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
@@ -501,80 +503,93 @@ export class IslandContentRenderer {
             <div class="settings-scroll-area">
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <label class="input-label">Active Model</label>
+                  <label class="input-label" id="lbl-settings-active-model">Active Model</label>
                   <button class="btn-text" id="btn-open-model-download" style="padding: 2px 6px; font-size: 10.5px; color: #10b981;">+ Download Models</button>
                 </div>
                 <select class="mintu-select" id="settings-active-model"></select>
-                <div class="setting-hint">Choose which local model powers Mintu.</div>
+                <div class="setting-hint" id="hint-settings-active-model">Choose which local model powers Mintu.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">System Persona Prompt</label>
+                <label class="input-label" id="lbl-settings-system-prompt">System Persona Prompt</label>
                 <textarea class="mintu-textarea" id="settings-system-prompt" rows="3"></textarea>
-                <div class="setting-hint">Defines Mintu's personality and instructions.</div>
+                <div class="setting-hint" id="hint-settings-system-prompt">Defines Mintu's personality and instructions.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Inference Options</label>
+                <label class="input-label" id="lbl-settings-inference-options">Inference Options</label>
                 <div class="settings-row-chips">
-                  <span class="info-pill">Context: 2048 tokens</span>
-                  <span class="info-pill">Idle Unload: 10 mins</span>
-                  <span class="info-pill">Hardware: CPU Auto</span>
+                  <span class="info-pill" id="pill-opt-context">Context: 2048 tokens</span>
+                  <span class="info-pill" id="pill-opt-idle">Idle Unload: 10 mins</span>
+                  <span class="info-pill" id="pill-opt-hardware">Hardware: CPU Auto</span>
                 </div>
               </div>
 
+              <!-- APP INTERFACE LANGUAGE -->
+              <div class="settings-section-divider" id="settings-lang-section-divider">App Language &amp; Interface</div>
               <div class="setting-item">
-                <label class="input-label">When Mintu is Outside (Free Mode)</label>
+                <label class="input-label" id="settings-app-lang-label">App Interface Language</label>
+                <select class="mintu-select" id="settings-app-language">
+                  <option value="az">Azərbaycan (AZ)</option>
+                  <option value="en">English (EN)</option>
+                  <option value="tr">Türkçe (TR)</option>
+                  <option value="ru">Русский (RU)</option>
+                </select>
+                <div class="setting-hint" id="settings-app-lang-hint">Select the language for Mintu interface, buttons, and prompts.</div>
+              </div>
+
+              <div class="setting-item">
+                <label class="input-label" id="lbl-settings-outside-behavior">When Mintu is Outside (Free Mode)</label>
                 <select class="mintu-select" id="settings-outside-behavior">
                   <option value="empty-pill">Show empty pill</option>
                   <option value="hide">Hide the island</option>
                 </select>
-                <div class="setting-hint">Island appearance while Mintu roams the desktop.</div>
+                <div class="setting-hint" id="hint-settings-outside-behavior">Island appearance while Mintu roams the desktop.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Mintu Walks on Windows (Free Mode)</label>
+                <label class="input-label" id="lbl-settings-walk-windows">Mintu Walks on Windows (Free Mode)</label>
                 <select class="mintu-select" id="settings-walk-windows">
                   <option value="on">Enabled</option>
                   <option value="off">Disabled</option>
                 </select>
-                <div class="setting-hint">Allows Mintu to walk on top of active application windows.</div>
+                <div class="setting-hint" id="hint-settings-walk-windows">Allows Mintu to walk on top of active application windows.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Window Walking Ignored Apps</label>
+                <label class="input-label" id="lbl-settings-window-ignore">Window Walking Ignored Apps</label>
                 <textarea class="mintu-textarea" id="settings-window-ignore-list" rows="2" placeholder="game.exe, player.exe"></textarea>
-                <div class="setting-hint">Comma-separated list of process names Mintu should not walk on.</div>
+                <div class="setting-hint" id="hint-settings-window-ignore">Comma-separated list of process names Mintu should not walk on.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Privacy App Blocklist</label>
+                <label class="input-label" id="lbl-settings-privacy-blocklist">Privacy App Blocklist</label>
                 <textarea class="mintu-textarea" id="settings-privacy-blocklist" rows="2" placeholder="1password.exe, bitwarden.exe, keepass.exe"></textarea>
-                <div class="setting-hint">Mintu will never read or capture text/screen from these apps.</div>
+                <div class="setting-hint" id="hint-settings-privacy-blocklist">Mintu will never read or capture text/screen from these apps.</div>
               </div>
 
               <!-- SYSTEM & STARTUP CONVENIENCE (MILESTONE 7) -->
-              <div class="settings-section-divider">System &amp; Startup Convenience</div>
+              <div class="settings-section-divider" id="divider-settings-system">System &amp; Startup Convenience</div>
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <label class="input-label" style="margin-bottom: 0;">Auto-start with Windows</label>
+                  <label class="input-label" id="lbl-settings-autostart" style="margin-bottom: 0;">Auto-start with Windows</label>
                   <input type="checkbox" id="settings-autostart-toggle" style="accent-color: #34D399; width: 16px; height: 16px; cursor: pointer;" />
                 </div>
-                <div class="setting-hint">Launch Mintu automatically in background when your PC boots.</div>
+                <div class="setting-hint" id="hint-settings-autostart">Launch Mintu automatically in background when your PC boots.</div>
               </div>
 
               <!-- VOICE & SPEECH ENGINE (MILESTONE 7) -->
-              <div class="settings-section-divider">Voice &amp; Speech (Milestone 7)</div>
+              <div class="settings-section-divider" id="divider-settings-voice">Voice &amp; Speech (Milestone 7)</div>
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <label class="input-label" style="margin-bottom: 0;">Mintu Voice (Text-to-Speech)</label>
+                  <label class="input-label" id="lbl-settings-tts" style="margin-bottom: 0;">Mintu Voice (Text-to-Speech)</label>
                   <input type="checkbox" id="settings-tts-toggle" style="accent-color: #34D399; width: 16px; height: 16px; cursor: pointer;" />
                 </div>
-                <div class="setting-hint">Speaks answers aloud with synchronized pet mouth animations.</div>
+                <div class="setting-hint" id="hint-settings-tts">Speaks answers aloud with synchronized pet mouth animations.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Voice Recognition Language (STT)</label>
+                <label class="input-label" id="lbl-settings-stt">Voice Recognition Language (STT)</label>
                 <select class="mintu-select" id="settings-stt-language">
                   <option value="az-AZ">Azərbaycan (az-AZ)</option>
                   <option value="en-US">English (en-US)</option>
@@ -582,11 +597,11 @@ export class IslandContentRenderer {
                   <option value="ru-RU">Русский (ru-RU)</option>
                   <option value="de-DE">Deutsch (de-DE)</option>
                 </select>
-                <div class="setting-hint">Target language for microphone speech input.</div>
+                <div class="setting-hint" id="hint-settings-stt">Target language for microphone speech input.</div>
               </div>
 
               <!-- GAMIFICATION & WARDROBE (MILESTONE 8) -->
-              <div class="settings-section-divider">Gamification &amp; Wardrobe (Milestone 8)</div>
+              <div class="settings-section-divider" id="divider-settings-gamification">Gamification &amp; Wardrobe (Milestone 8)</div>
               <div class="setting-item">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                   <span style="font-size: 12px; font-weight: 600; color: #E5E7EB;" id="settings-xp-level-title">Level 1 Mintu</span>
@@ -599,27 +614,27 @@ export class IslandContentRenderer {
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Mintu's Wardrobe Accessories</label>
+                <label class="input-label" id="lbl-settings-wardrobe">Mintu's Wardrobe Accessories</label>
                 <div class="wardrobe-grid" id="wardrobe-items-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px;">
                   <!-- Accessories injected dynamically by XPManager -->
                 </div>
-                <div class="setting-hint">Select any unlocked accessory to dress Mintu on your desktop and island.</div>
+                <div class="setting-hint" id="hint-settings-wardrobe">Select any unlocked accessory to dress Mintu on your desktop and island.</div>
               </div>
 
               <!-- SMART CLIPBOARD & AUTO-UPDATER (MILESTONE 8) -->
-              <div class="settings-section-divider">Smart Productivity &amp; Updates (Milestone 8)</div>
+              <div class="settings-section-divider" id="divider-settings-productivity">Smart Productivity &amp; Updates (Milestone 8)</div>
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <label class="input-label" style="margin-bottom: 0;">Smart Clipboard Assistant</label>
+                  <label class="input-label" id="lbl-settings-clipboard" style="margin-bottom: 0;">Smart Clipboard Assistant</label>
                   <input type="checkbox" id="settings-smart-clipboard-toggle" checked style="accent-color: #34D399; width: 16px; height: 16px; cursor: pointer;" />
                 </div>
-                <div class="setting-hint">Shows quick action pill on Ctrl+C (code check, JSON formatting, or Azerbaijani translation).</div>
+                <div class="setting-hint" id="hint-settings-clipboard">Shows quick action pill on Ctrl+C (code check, JSON formatting, or Azerbaijani translation).</div>
               </div>
 
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <div>
-                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;">Mintu Version v0.2.0</div>
+                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;" id="settings-mintu-version-text">Mintu Version v0.2.1</div>
                     <div class="setting-hint" id="settings-updater-status">Up to date with GitHub Releases.</div>
                   </div>
                   <button class="btn-small-action" id="btn-check-updates-now" style="font-size: 11px; height: 28px;">Check Updates</button>
@@ -627,16 +642,16 @@ export class IslandContentRenderer {
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Developer Panel (Ctrl+Shift+D)</label>
+                <label class="input-label" id="lbl-settings-dev-panel">Developer Panel (Ctrl+Shift+D)</label>
                 <select class="mintu-select" id="settings-dev-panel">
                   <option value="off">Disabled</option>
                   <option value="on">Enabled</option>
                 </select>
-                <div class="setting-hint">Enables Ctrl+Shift+D debug overlay and hit-test visualizer.</div>
+                <div class="setting-hint" id="hint-settings-dev-panel">Enables Ctrl+Shift+D debug overlay and hit-test visualizer.</div>
               </div>
 
               <div class="setting-item">
-                <label class="input-label">Local Model Storage & Disk Drive</label>
+                <label class="input-label" id="lbl-settings-disk">Local Model Storage &amp; Disk Drive</label>
                 <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: rgba(0, 0, 0, 0.35); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); font-size: 11px;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: #9CA3AF;">Active Storage:</span>
@@ -1182,8 +1197,8 @@ export class IslandContentRenderer {
     // Suggestion chips click
     this.chipsRowEl.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest(".chip-btn") as HTMLElement;
-      if (btn && btn.dataset.chip) {
-        this.chatInputEl.value = btn.dataset.chip;
+      if (btn) {
+        this.chatInputEl.value = btn.textContent?.trim() || btn.dataset.chip || "";
         this.submitUserMessage();
       }
     });
@@ -1520,6 +1535,12 @@ export class IslandContentRenderer {
         });
       }
 
+      // App Interface Language
+      const appLangSelect = this.slotExpanded.querySelector("#settings-app-language") as HTMLSelectElement;
+      if (appLangSelect && appLangSelect.value) {
+        this.applyUiTranslations(appLangSelect.value as SupportedLanguage);
+      }
+
       eventBus.emit("pet:say", { text: "Settings saved!" });
       eventBus.emit("pet:action", { type: "state", payload: "happy" });
       this.switchSubView("chat");
@@ -1530,6 +1551,14 @@ export class IslandContentRenderer {
 
     const saveSettingsTopBtn = this.slotExpanded.querySelector("#btn-save-settings-top");
     saveSettingsTopBtn?.addEventListener("click", handleSaveSettings);
+
+    const appLangSelect = this.slotExpanded.querySelector("#settings-app-language") as HTMLSelectElement;
+    if (appLangSelect) {
+      appLangSelect.value = i18n.getLang();
+      appLangSelect.addEventListener("change", () => {
+        this.applyUiTranslations(appLangSelect.value as SupportedLanguage);
+      });
+    }
 
     // Model Tag Popover Switcher Wiring (Image J fix)
     const modelTagEl = this.slotExpanded.querySelector("#mintu-model-tag");
@@ -2532,6 +2561,7 @@ export class IslandContentRenderer {
 
   public updateMusicUi(media: any): void {
     if (!media) return;
+    eventBus.emit("music:ambient-update", media);
     const titleEl = this.slotMusic.querySelector("#music-track-title");
     const artistEl = this.slotMusic.querySelector("#music-artist-subtitle");
     const artImg = this.slotMusic.querySelector("#music-art-image") as HTMLImageElement;
@@ -3372,6 +3402,12 @@ export class IslandContentRenderer {
     const target = this.slotExpanded.querySelector(`.subview-${view}`);
     if (target) target.classList.add("active");
 
+    const islandEl = this.container.closest(".mintu-island");
+    if (islandEl) {
+      islandEl.classList.toggle("subview-settings-active", view === "settings");
+      islandEl.classList.toggle("subview-onboard-active", view === "onboarding");
+    }
+
     if (view === "chat") {
       const installed = modelManager.getInstalledModels();
       const hasCloud = cloudProviderManager.getActiveProviderId() !== "local";
@@ -3383,6 +3419,12 @@ export class IslandContentRenderer {
     if (view === "settings") {
       this.populateModelSelects();
       this.refreshStorageUI();
+
+      const appLangSelect = this.slotExpanded.querySelector("#settings-app-language") as HTMLSelectElement;
+      if (appLangSelect) {
+        appLangSelect.value = i18n.getLang();
+      }
+
       const promptInput = this.slotExpanded.querySelector("#settings-system-prompt") as HTMLTextAreaElement;
       if (promptInput) promptInput.value = chatManager.getSystemPrompt();
 
@@ -3928,6 +3970,8 @@ export class IslandContentRenderer {
     const drawer = this.slotExpanded.querySelector("#chat-drawer");
     if (!drawer) return;
     drawer.classList.add("open");
+    const islandEl = this.container.closest(".mintu-island");
+    if (islandEl) islandEl.classList.add("drawer-open");
     const searchInput = this.slotExpanded.querySelector("#chat-search-input") as HTMLInputElement;
     if (searchInput) {
       searchInput.value = "";
@@ -3939,6 +3983,8 @@ export class IslandContentRenderer {
   private closeChatDrawer(): void {
     const drawer = this.slotExpanded.querySelector("#chat-drawer");
     if (drawer) drawer.classList.remove("open");
+    const islandEl = this.container.closest(".mintu-island");
+    if (islandEl) islandEl.classList.remove("drawer-open");
   }
 
   private async renderChatList(filterQuery?: string): Promise<void> {
@@ -4609,6 +4655,178 @@ export class IslandContentRenderer {
     const pick = tips[Math.floor(Math.random() * tips.length)];
     soundEngine.playCuteChirp("happy");
     eventBus.emit("pet:say", { text: pick });
+  }
+
+  public applyUiTranslations(lang: SupportedLanguage): void {
+    i18n.setLang(lang);
+    const t = i18n.t();
+
+    // 1. Expanded Header Action Buttons (tooltips)
+    const btnNewChat = this.slotExpanded.querySelector("#btn-new-chat");
+    if (btnNewChat) btnNewChat.setAttribute("title", t.actions.newChat);
+    const btnChatList = this.slotExpanded.querySelector("#btn-chat-list-toggle");
+    if (btnChatList) btnChatList.setAttribute("title", t.actions.allChats);
+    const btnExport = this.slotExpanded.querySelector("#btn-export-chat");
+    if (btnExport) btnExport.setAttribute("title", t.actions.exportMarkdown);
+    const btnClear = this.slotExpanded.querySelector("#btn-clear-chat");
+    if (btnClear) btnClear.setAttribute("title", t.actions.clearChat);
+    const btnSettings = this.slotExpanded.querySelector("#btn-settings-toggle");
+    if (btnSettings) btnSettings.setAttribute("title", t.actions.settings);
+    const btnCollapse = this.slotExpanded.querySelector("#btn-collapse-island");
+    if (btnCollapse) btnCollapse.setAttribute("title", t.actions.collapse);
+
+    // 2. Chat greeting, chips, and user input placeholder
+    const greetingEl = this.slotExpanded.querySelector("#chat-greeting-heading") || this.slotExpanded.querySelector(".greeting-heading");
+    if (greetingEl) greetingEl.textContent = t.howCanIHelp;
+
+    const chipTasks = this.slotExpanded.querySelector("#chip-check-tasks") || this.slotExpanded.querySelector('[data-chip="Check Tasks"]');
+    if (chipTasks) chipTasks.textContent = t.chips.checkTasks;
+    const chipAi = this.slotExpanded.querySelector("#chip-ask-ai") || this.slotExpanded.querySelector('[data-chip="Ask AI"]');
+    if (chipAi) chipAi.textContent = t.chips.askAi;
+    const chipCode = this.slotExpanded.querySelector("#chip-explain-code") || this.slotExpanded.querySelector('[data-chip="Explain code"]');
+    if (chipCode) chipCode.textContent = t.chips.explainCode;
+    const chipJoke = this.slotExpanded.querySelector("#chip-tell-joke") || this.slotExpanded.querySelector('[data-chip="Tell a joke"]');
+    if (chipJoke) chipJoke.textContent = t.chips.tellJoke;
+
+    const chatInput = (this.slotExpanded.querySelector("#chat-user-input") as HTMLInputElement) || this.chatInputEl;
+    if (chatInput) chatInput.placeholder = t.typeMessageOrSpeak;
+
+    // 3. Chat Drawer
+    const drawerTitle = this.slotExpanded.querySelector(".chat-drawer-title");
+    if (drawerTitle) {
+      drawerTitle.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        ${t.drawer.conversations}
+      `;
+    }
+    const searchInput = this.slotExpanded.querySelector("#chat-search-input") as HTMLInputElement;
+    if (searchInput) searchInput.placeholder = t.drawer.searchPlaceholder;
+
+    // 4. Settings View
+    const setTitle = this.slotExpanded.querySelector(".settings-title");
+    if (setTitle) setTitle.textContent = t.settings.title;
+    const btnSave = this.slotExpanded.querySelector("#btn-save-settings-top");
+    if (btnSave) btnSave.textContent = t.settings.save;
+    const btnCloseSet = this.slotExpanded.querySelector("#btn-close-settings");
+    if (btnCloseSet) btnCloseSet.textContent = `← ${t.settings.chat}`;
+    const btnColSet = this.slotExpanded.querySelector("#btn-collapse-settings");
+    if (btnColSet) btnColSet.textContent = `✕ ${t.settings.close}`;
+
+    const lblActiveModel = this.slotExpanded.querySelector("#lbl-settings-active-model");
+    if (lblActiveModel) lblActiveModel.textContent = t.settings.activeModel;
+    const btnDlModel = this.slotExpanded.querySelector("#btn-open-model-download");
+    if (btnDlModel) btnDlModel.textContent = `+ ${t.settings.downloadModels}`;
+    const hintActiveModel = this.slotExpanded.querySelector("#hint-settings-active-model");
+    if (hintActiveModel) hintActiveModel.textContent = t.settings.activeModelHint;
+
+    const lblSysPrompt = this.slotExpanded.querySelector("#lbl-settings-system-prompt");
+    if (lblSysPrompt) lblSysPrompt.textContent = t.settings.systemPersonaPrompt;
+    const hintSysPrompt = this.slotExpanded.querySelector("#hint-settings-system-prompt");
+    if (hintSysPrompt) hintSysPrompt.textContent = t.settings.systemPersonaHint;
+
+    const lblInference = this.slotExpanded.querySelector("#lbl-settings-inference-options");
+    if (lblInference) lblInference.textContent = t.settings.inferenceOptions;
+
+    const divLang = this.slotExpanded.querySelector("#settings-lang-section-divider");
+    if (divLang) divLang.textContent = t.settings.appLanguage;
+    const lblAppLang = this.slotExpanded.querySelector("#settings-app-lang-label");
+    if (lblAppLang) lblAppLang.textContent = t.settings.appLanguage;
+    const hintAppLang = this.slotExpanded.querySelector("#settings-app-lang-hint");
+    if (hintAppLang) hintAppLang.textContent = t.settings.appLanguageHint;
+
+    const appLangSelect = this.slotExpanded.querySelector("#settings-app-language") as HTMLSelectElement;
+    if (appLangSelect && appLangSelect.value !== lang) {
+      appLangSelect.value = lang;
+    }
+
+    const lblOutside = this.slotExpanded.querySelector("#lbl-settings-outside-behavior");
+    if (lblOutside) lblOutside.textContent = t.settings.whenMintuOutside;
+    const outsideSelect = this.slotExpanded.querySelector("#settings-outside-behavior") as HTMLSelectElement;
+    if (outsideSelect && outsideSelect.options.length >= 2) {
+      outsideSelect.options[0].textContent = t.settings.showEmptyPill;
+      outsideSelect.options[1].textContent = t.settings.hideIsland;
+    }
+    const hintOutside = this.slotExpanded.querySelector("#hint-settings-outside-behavior");
+    if (hintOutside) hintOutside.textContent = t.settings.outsideHint;
+
+    const lblWalk = this.slotExpanded.querySelector("#lbl-settings-walk-windows");
+    if (lblWalk) lblWalk.textContent = t.settings.walkWindows;
+    const walkSelect = this.slotExpanded.querySelector("#settings-walk-windows") as HTMLSelectElement;
+    if (walkSelect && walkSelect.options.length >= 2) {
+      walkSelect.options[0].textContent = t.settings.enabled;
+      walkSelect.options[1].textContent = t.settings.disabled;
+    }
+    const hintWalk = this.slotExpanded.querySelector("#hint-settings-walk-windows");
+    if (hintWalk) hintWalk.textContent = t.settings.walkWindowsHint;
+
+    const lblIgnore = this.slotExpanded.querySelector("#lbl-settings-window-ignore");
+    if (lblIgnore) lblIgnore.textContent = t.settings.windowIgnoreList;
+    const hintIgnore = this.slotExpanded.querySelector("#hint-settings-window-ignore");
+    if (hintIgnore) hintIgnore.textContent = t.settings.windowIgnoreHint;
+
+    const lblPrivacy = this.slotExpanded.querySelector("#lbl-settings-privacy-blocklist");
+    if (lblPrivacy) lblPrivacy.textContent = t.settings.privacyBlocklist;
+    const hintPrivacy = this.slotExpanded.querySelector("#hint-settings-privacy-blocklist");
+    if (hintPrivacy) hintPrivacy.textContent = t.settings.privacyBlocklistHint;
+
+    const divSys = this.slotExpanded.querySelector("#divider-settings-system");
+    if (divSys) divSys.textContent = t.settings.systemStartup;
+    const lblAuto = this.slotExpanded.querySelector("#lbl-settings-autostart");
+    if (lblAuto) lblAuto.textContent = t.settings.autoStart;
+    const hintAuto = this.slotExpanded.querySelector("#hint-settings-autostart");
+    if (hintAuto) hintAuto.textContent = t.settings.autoStartHint;
+
+    const divVoice = this.slotExpanded.querySelector("#divider-settings-voice");
+    if (divVoice) divVoice.textContent = t.settings.voiceSpeech;
+    const lblTts = this.slotExpanded.querySelector("#lbl-settings-tts");
+    if (lblTts) lblTts.textContent = t.settings.mintuVoice;
+    const hintTts = this.slotExpanded.querySelector("#hint-settings-tts");
+    if (hintTts) hintTts.textContent = t.settings.mintuVoiceHint;
+    const lblStt = this.slotExpanded.querySelector("#lbl-settings-stt");
+    if (lblStt) lblStt.textContent = t.settings.sttLanguage;
+    const hintStt = this.slotExpanded.querySelector("#hint-settings-stt");
+    if (hintStt) hintStt.textContent = t.settings.sttLanguageHint;
+
+    const divGame = this.slotExpanded.querySelector("#divider-settings-gamification");
+    if (divGame) divGame.textContent = t.settings.gamification;
+    const lblWardrobe = this.slotExpanded.querySelector("#lbl-settings-wardrobe");
+    if (lblWardrobe) lblWardrobe.textContent = t.settings.wardrobe;
+
+    const divProd = this.slotExpanded.querySelector("#divider-settings-productivity");
+    if (divProd) divProd.textContent = t.settings.productivityUpdates;
+    const lblClip = this.slotExpanded.querySelector("#lbl-settings-clipboard");
+    if (lblClip) lblClip.textContent = t.settings.smartClipboard;
+    const hintClip = this.slotExpanded.querySelector("#hint-settings-clipboard");
+    if (hintClip) hintClip.textContent = t.settings.smartClipboardHint;
+
+    const verEl = this.slotExpanded.querySelector("#settings-mintu-version-text");
+    if (verEl) verEl.textContent = `${t.settings.mintuVersion} v0.2.1`;
+    const btnCheckUp = this.slotExpanded.querySelector("#btn-check-updates-now");
+    if (btnCheckUp) btnCheckUp.textContent = t.settings.checkUpdates;
+
+    const lblDev = this.slotExpanded.querySelector("#lbl-settings-dev-panel");
+    if (lblDev) lblDev.textContent = t.settings.devPanel;
+    const hintDev = this.slotExpanded.querySelector("#hint-settings-dev-panel");
+    if (hintDev) hintDev.textContent = t.settings.devPanelHint;
+
+    const lblDisk = this.slotExpanded.querySelector("#lbl-settings-disk");
+    if (lblDisk) lblDisk.textContent = t.settings.diskStorage;
+
+    // 5. Memo / Scratchpad
+    if (this.slotMemo) {
+      const memoTitle = this.slotMemo.querySelector(".memo-title");
+      if (memoTitle) memoTitle.textContent = t.scratchpad.title;
+      const btnCopy = this.slotMemo.querySelector("#btn-memo-copy");
+      if (btnCopy) btnCopy.textContent = t.scratchpad.copy;
+      const btnSumm = this.slotMemo.querySelector("#btn-memo-summarize");
+      if (btnSumm) btnSumm.textContent = t.scratchpad.summarize;
+      const btnClearM = this.slotMemo.querySelector("#btn-memo-clear");
+      if (btnClearM) btnClearM.textContent = t.scratchpad.clear;
+      const memoArea = this.slotMemo.querySelector("#memo-textarea") as HTMLTextAreaElement;
+      if (memoArea) memoArea.placeholder = t.scratchpad.placeholder;
+    }
   }
 
   destroy(): void {

@@ -48,12 +48,43 @@
 
 /* In expanded AI slot, pet sits neatly inside the expanded top bar */
 .mintu-island.expanded .mintu-pet-container.pill-mode,
+.mintu-island[data-state="expanded"] .mintu-pet-container.pill-mode,
+.mintu-island.state-expanded .mintu-pet-container.pill-mode,
 .slot-expanded.active ~ .mintu-pet-container.pill-mode {
-  left: 16px;
-  top: 18px;
+  left: 18px;
+  top: 14px;
   transform: none;
   width: 44px;
   height: 44px;
+}
+
+/* In translate slot, pet sits neatly inside translate header */
+.mintu-island.state-translate .mintu-pet-container.pill-mode,
+.mintu-island[data-state="translate"] .mintu-pet-container.pill-mode {
+  left: 16px;
+  top: 14px;
+  transform: none;
+  width: 44px;
+  height: 44px;
+}
+
+/* In memo (scratchpad) mode, hide pill pet to leave full writing area */
+.mintu-island.state-memo .mintu-pet-container.pill-mode,
+.mintu-island[data-state="memo"] .mintu-pet-container.pill-mode {
+  display: none !important;
+}
+
+/* In Settings subview or when Drawer is open, hide pill pet so it never overlaps text, inputs, or buttons */
+.mintu-island.drawer-open .mintu-pet-container.pill-mode,
+.mintu-island.settings-active .mintu-pet-container.pill-mode,
+.mintu-island.subview-settings-active .mintu-pet-container.pill-mode,
+.mintu-island.subview-onboard-active .mintu-pet-container.pill-mode,
+.mintu-island:has(.subview-settings.active) .mintu-pet-container.pill-mode,
+.mintu-island:has(.subview-onboarding.active) .mintu-pet-container.pill-mode,
+.mintu-island:has(.chat-drawer.open) .mintu-pet-container.pill-mode {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Mode 2: Full Mode (Desktop Free Mode) */

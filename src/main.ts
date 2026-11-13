@@ -88,6 +88,7 @@ class MintuApp {
     this.islandBehaviorScheduler = new BehaviorScheduler(this.islandAnimController, false);
 
     const islandViewport = document.getElementById("island-viewport")!;
+    islandViewport.appendChild(this.islandController.ambientGlowEl);
     islandViewport.appendChild(this.islandController.el);
 
     // ==========================================

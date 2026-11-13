@@ -43,9 +43,11 @@ export const IslandDimensionsPresets: Record<string, IslandDimensions> = {
 
 export class IslandController {
   public readonly el: HTMLElement;
+  public readonly ambientGlowEl: HTMLElement;
   public readonly content: IslandContentRenderer;
   private petRenderer: PetRenderer;
   private animController: AnimationController;
+  private currentTrackTitle: string = "";
 
   private currentState: string = "idle";
   private springWidth = new Spring1D(172, SpringPresets.liquid);
@@ -58,6 +60,12 @@ export class IslandController {
   constructor(petRenderer: PetRenderer, animController: AnimationController) {
     this.petRenderer = petRenderer;
     this.animController = animController;
+
+    this.ambientGlowEl = document.createElement("div");
+    this.ambientGlowEl.className = "island-music-ambient-glow";
+    this.ambientGlowEl.style.width = "172px";
+    this.ambientGlowEl.style.height = "44px";
+    this.ambientGlowEl.style.borderRadius = "22px";
 
     this.el = document.createElement("div");
     this.el.className = "mintu-island";
@@ -112,6 +120,10 @@ export class IslandController {
       if (this.isMintuOutside) {
         this.setOutside(true);
       }
+    });
+
+    eventBus.on("music:ambient-update", (media: any) => {
+      this.setMusicAmbient(media);
     });
 
     this.setupInteractions();
@@ -208,6 +220,13 @@ export class IslandController {
     if (name.startsWith("expanded")) {
       appBridge.focusMainWindow();
     }
+
+    if (prev) {
+      this.el.classList.remove(`state-${prev}`);
+    }
+    this.el.classList.add(`state-${name}`);
+    this.el.classList.toggle("expanded", name === "expanded" || name.startsWith("expanded"));
+    this.el.dataset.state = name;
 
     if (prev.startsWith("notification") && !name.startsWith("notification")) {
       eventBus.emit("island:notification-dismissed", {});
@@ -342,6 +361,40 @@ export class IslandController {
     this.triggerPopRipple();
   }
 
+  public setMusicAmbient(media: { is_playing?: boolean; title?: string; artist?: string; thumbnail_base64?: string | null }): void {
+    if (!media || !media.is_playing) {
+      this.ambientGlowEl.classList.remove("active", "shockwave");
+      return;
+    }
+
+    const isNewTrack = media.title && media.title !== this.currentTrackTitle;
+    if (media.title) {
+      this.currentTrackTitle = media.title;
+    }
+
+    if (media.thumbnail_base64 && media.thumbnail_base64.length > 50) {
+      const bgUrl = media.thumbnail_base64.startsWith("data:")
+        ? media.thumbnail_base64
+        : `data:image/jpeg;base64,${media.thumbnail_base64}`;
+      this.ambientGlowEl.style.backgroundImage = `url("${bgUrl}")`;
+      this.ambientGlowEl.style.background = "";
+    } else {
+      const hash = (media.title || "Music").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      const hue1 = hash % 360;
+      const hue2 = (hash + 120) % 360;
+      this.ambientGlowEl.style.backgroundImage = "none";
+      this.ambientGlowEl.style.background = `radial-gradient(circle at 50% 50%, hsl(${hue1}, 85%, 55%), hsl(${hue2}, 90%, 45%))`;
+    }
+
+    this.ambientGlowEl.classList.add("active");
+
+    if (isNewTrack) {
+      this.ambientGlowEl.classList.remove("shockwave");
+      void this.ambientGlowEl.offsetWidth; // Force CSS reflow
+      this.ambientGlowEl.classList.add("shockwave");
+    }
+  }
+
   update(dtSec: number): void {
     this.springWidth.update(dtSec);
     this.springHeight.update(dtSec);
@@ -351,8 +404,16 @@ export class IslandController {
     const h = this.springHeight.value;
     const r = this.springRadius.value;
 
-    this.el.style.width = `${w.toFixed(1)}px`;
-    this.el.style.height = `${h.toFixed(1)}px`;
-    this.el.style.borderRadius = `${r.toFixed(1)}px`;
+    const wStr = `${w.toFixed(1)}px`;
+    const hStr = `${h.toFixed(1)}px`;
+    const rStr = `${r.toFixed(1)}px`;
+
+    this.el.style.width = wStr;
+    this.el.style.height = hStr;
+    this.el.style.borderRadius = rStr;
+
+    this.ambientGlowEl.style.width = wStr;
+    this.ambientGlowEl.style.height = hStr;
+    this.ambientGlowEl.style.borderRadius = rStr;
   }
 }

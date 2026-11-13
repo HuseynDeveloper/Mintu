@@ -65,6 +65,7 @@ export type MintuEventMap = {
   "clipboard:action-suggested": any;
   "clipboard:action-cleared": Record<string, any>;
   "app:update-available": any;
+  "music:ambient-update": any;
 };
 
 type EventHandler<T> = (data: T) => void;
