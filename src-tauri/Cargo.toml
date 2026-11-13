@@ -1,6 +1,6 @@
 [package]
 name = "mintu"
-version = "0.2.1"
+version = "0.2.2"
 description = "A living desktop companion with a Dynamic Island"
 authors = ["Mintu Contributors"]
 edition = "2021"

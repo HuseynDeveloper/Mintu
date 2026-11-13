@@ -292,7 +292,7 @@ export class IslandContentRenderer {
 
           <!-- Update Available Banner (Milestone 8) -->
           <div class="mintu-update-banner" id="mintu-update-banner" style="display: none;">
-            <span id="mintu-update-text">Mintu v0.2.1 hazırdır!</span>
+            <span id="mintu-update-text">Mintu v0.2.2 hazırdır!</span>
             <button class="btn-update-action" id="btn-mintu-update-open">Yenilə</button>
             <button class="btn-update-close" id="btn-mintu-update-close">✕</button>
           </div>
@@ -634,7 +634,7 @@ export class IslandContentRenderer {
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <div>
-                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;" id="settings-mintu-version-text">Mintu Version v0.2.1</div>
+                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;" id="settings-mintu-version-text">Mintu Version v0.2.2</div>
                     <div class="setting-hint" id="settings-updater-status">Up to date with GitHub Releases.</div>
                   </div>
                   <button class="btn-small-action" id="btn-check-updates-now" style="font-size: 11px; height: 28px;">Check Updates</button>
@@ -4802,7 +4802,7 @@ export class IslandContentRenderer {
     if (hintClip) hintClip.textContent = t.settings.smartClipboardHint;
 
     const verEl = this.slotExpanded.querySelector("#settings-mintu-version-text");
-    if (verEl) verEl.textContent = `${t.settings.mintuVersion} v0.2.1`;
+    if (verEl) verEl.textContent = `${t.settings.mintuVersion} v0.2.2`;
     const btnCheckUp = this.slotExpanded.querySelector("#btn-check-updates-now");
     if (btnCheckUp) btnCheckUp.textContent = t.settings.checkUpdates;
 
