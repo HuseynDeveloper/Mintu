@@ -392,6 +392,9 @@ export class IslandController {
       this.ambientGlowEl.classList.remove("shockwave");
       void this.ambientGlowEl.offsetWidth; // Force CSS reflow
       this.ambientGlowEl.classList.add("shockwave");
+      // Apple-style fluid spring pulse & morph on music start/track change
+      this.springWidth.velocity = 140;
+      this.springHeight.velocity = 60;
     }
   }
 

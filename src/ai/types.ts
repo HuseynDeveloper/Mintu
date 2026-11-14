@@ -71,6 +71,8 @@ export interface ModelCatalogItem {
   description: string;
   verification_status?: string;
   verification_source?: string;
+  supports_tools?: boolean;
+  tool_calling_note?: string;
 }
 
 export interface HardwareInfo {

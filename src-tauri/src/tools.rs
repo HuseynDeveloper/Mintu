@@ -11,6 +11,7 @@ use windows_sys::Win32::UI::Shell::{
     ShellExecuteW, SHFileOperationW, FOF_ALLOWUNDO, FOF_NOCONFIRMATION, FOF_SILENT, FO_DELETE,
     SHFILEOPSTRUCTW,
 };
+use windows_sys::Win32::UI::WindowsAndMessaging::SetCursorPos;
 
 const CF_UNICODETEXT: u32 = 13;
 
@@ -516,5 +517,35 @@ pub fn read_clipboard_text_safe() -> Result<String, String> {
         CloseClipboard();
 
         Ok(text)
+    }
+}
+
+pub fn create_and_open_code_file(filename: &str, content: &str, _editor: Option<&str>) -> Result<String, String> {
+    let safe_name = Path::new(filename)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "Invalid filename".to_string())?;
+
+    let target_dir = get_default_allowed_dirs()
+        .into_iter()
+        .find(|d| d.ends_with("Desktop") || d.ends_with("Documents"))
+        .unwrap_or_else(|| std::env::temp_dir().to_string_lossy().to_string());
+
+    let file_path = PathBuf::from(&target_dir).join(safe_name);
+    fs::write(&file_path, content).map_err(|e| format!("Failed to write file: {}", e))?;
+
+    let file_str = file_path.to_string_lossy().to_string();
+    launch_path(&file_str, safe_name)?;
+
+    Ok(format!("Created and opened {}", file_str))
+}
+
+pub fn move_mouse_cursor(x: i32, y: i32) -> Result<String, String> {
+    unsafe {
+        if SetCursorPos(x, y) != 0 {
+            Ok(format!("Cursor moved to ({}, {})", x, y))
+        } else {
+            Err("Failed to set cursor position".to_string())
+        }
     }
 }

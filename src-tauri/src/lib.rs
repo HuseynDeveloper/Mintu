@@ -1032,6 +1032,16 @@ fn tools_get_default_allowed_dirs() -> Result<Vec<String>, String> {
     Ok(tools::get_default_allowed_dirs())
 }
 
+#[tauri::command]
+fn tools_create_and_open_code(filename: String, content: String, editor: Option<String>) -> Result<String, String> {
+    tools::create_and_open_code_file(&filename, &content, editor.as_deref())
+}
+
+#[tauri::command]
+fn tools_move_mouse_cursor(x: i32, y: i32) -> Result<String, String> {
+    tools::move_mouse_cursor(x, y)
+}
+
 // ==========================================
 // Storage - Audit Logs & Reminders Commands
 // ==========================================
@@ -1223,6 +1233,8 @@ pub fn run() {
             tools_open_url,
             tools_read_clipboard,
             tools_get_default_allowed_dirs,
+            tools_create_and_open_code,
+            tools_move_mouse_cursor,
             db_save_audit_log,
             db_list_audit_logs,
             db_clear_audit_logs,

@@ -106,6 +106,7 @@ export class IslandContentRenderer {
   private pendingDeleteChatId: string | null = null;
   private editingMessageId: string | null = null;
   private currentSlotName: string = "idle";
+  private isUserScrolledUp: boolean = false;
 
   // Callback to request island size update
   public onRequestResize?: (width: number, height: number) => void;
@@ -1120,6 +1121,15 @@ export class IslandContentRenderer {
   }
 
   private setupExpandedEventHandlers(): void {
+    // Smart user scroll detection to prevent auto-scroll from overriding user scrolling during streaming
+    const scrollArea = this.slotExpanded.querySelector(".chat-messages-scroll-area");
+    if (scrollArea) {
+      scrollArea.addEventListener("scroll", () => {
+        const distanceFromBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight;
+        this.isUserScrolledUp = distanceFromBottom > 50;
+      }, { passive: true });
+    }
+
     // Input submit on Enter (Shift+Enter for newline)
     this.chatInputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -2671,6 +2681,8 @@ export class IslandContentRenderer {
     }
 
     this.chatInputEl.value = "";
+    this.isUserScrolledUp = false;
+    this.scrollToBottom(true);
     if (this.editingMessageId) {
       const editId = this.editingMessageId;
       this.editingMessageId = null;
@@ -4201,10 +4213,12 @@ export class IslandContentRenderer {
     });
   }
 
-  private scrollToBottom(): void {
+  private scrollToBottom(force: boolean = false): void {
     const scrollArea = this.slotExpanded.querySelector(".chat-messages-scroll-area");
     if (scrollArea) {
-      scrollArea.scrollTop = scrollArea.scrollHeight;
+      if (force || !this.isUserScrolledUp) {
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }
     }
   }
 

@@ -13,7 +13,9 @@ export const DEFAULT_MODELS_CATALOG: ModelCatalogItem[] = [
     sha256: "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
     license: "Apache-2.0",
     languages_note: "Multilingual (EN, AZ, TR, RU, etc.)",
-    description: "Ultra-compact model. Blazing fast on any machine, runs seamlessly even with 4 GB total RAM."
+    description: "Ultra-compact model. Blazing fast on any machine, runs seamlessly even with 4 GB total RAM.",
+    supports_tools: false,
+    tool_calling_note: "Basic chat only (0.5B lacks multi-step tool reasoning)"
   },
   {
     id: "qwen2.5-1.5b",
@@ -27,7 +29,41 @@ export const DEFAULT_MODELS_CATALOG: ModelCatalogItem[] = [
     sha256: "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
     license: "Apache-2.0",
     languages_note: "Multilingual (EN, AZ, TR, RU, etc.)",
-    description: "Balanced compact model. Great conversational quality, fast response times."
+    description: "Balanced compact model. Great conversational quality, fast response times.",
+    supports_tools: true,
+    tool_calling_note: "Full desktop automation and tool execution supported"
+  },
+  {
+    id: "qwen2.5-coder-1.5b",
+    name: "Qwen 2.5 Coder 1.5B Instruct",
+    tier: "low",
+    size_bytes: 1117320736,
+    size_human: "1.12 GB",
+    min_ram_gb: 4,
+    context_length: 8192,
+    url: "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf",
+    sha256: "18fbe924d673f4e24294b46c6cb493c0ea5b51b3f6ef539316fb6d43e597cfa2",
+    license: "Apache-2.0",
+    languages_note: "Code & Multilingual (Python, JS, TS, Rust, etc.)",
+    description: "Specialized programming model optimized for VS Code, creating script files, and code generation.",
+    supports_tools: true,
+    tool_calling_note: "Advanced code file creation and desktop tool execution supported"
+  },
+  {
+    id: "deepseek-r1-distill-qwen-1.5b",
+    name: "DeepSeek R1 Distill Qwen 1.5B",
+    tier: "low",
+    size_bytes: 1117320736,
+    size_human: "1.12 GB",
+    min_ram_gb: 4,
+    context_length: 8192,
+    url: "https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
+    sha256: "b9b47e2b8344e13880bb6e25501ae5fcb621e7d69b4beae060c571ef9b2829ec",
+    license: "MIT",
+    languages_note: "Reasoning & Multilingual",
+    description: "DeepSeek-R1 reasoning distillation. Exhibits deep step-by-step thinking for complex logic and system commands.",
+    supports_tools: true,
+    tool_calling_note: "Reasoning-guided tool planning supported"
   },
   {
     id: "llama-3.2-3b",
@@ -41,7 +77,9 @@ export const DEFAULT_MODELS_CATALOG: ModelCatalogItem[] = [
     sha256: "6c1a2b41161032677be168d354123594c0e6e67d2b9227c84f296ad037c728ff",
     license: "Llama 3.2 Community",
     languages_note: "Multilingual (EN, AZ, TR, RU, etc.)",
-    description: "High intelligence for complex coding, reasoning, and context analysis."
+    description: "High intelligence for complex coding, reasoning, and context analysis.",
+    supports_tools: true,
+    tool_calling_note: "Full tool execution and multi-step reasoning supported"
   },
   {
     id: "nomic-embed-text-v1.5",
@@ -55,6 +93,8 @@ export const DEFAULT_MODELS_CATALOG: ModelCatalogItem[] = [
     sha256: "d4e388894e09cf3816e8b0896d81d265b55e7a9fff9ab03fe8bf4ef5e11295ac",
     license: "Apache-2.0",
     languages_note: "Multilingual text embedding model",
-    description: "Fast local embedding model for semantic memory search."
+    description: "Fast local embedding model for semantic memory search.",
+    supports_tools: false,
+    tool_calling_note: "Embedding only (no tool support)"
   }
 ];

@@ -246,6 +246,10 @@ export class ToolExecutor {
       return `App: ${appName}`;
     }
     if (toolName === "open_url") return `URL: ${params.url || ""}`;
+    if (toolName === "create_code_file") return `Create File: ${params.filename || ""} (${params.editor || "code"})`;
+    if (toolName === "play_spotify") return `Spotify: "${params.query || ""}"`;
+    if (toolName === "search_youtube") return `YouTube: "${params.query || ""}"`;
+    if (toolName === "desktop_guide") return `Guide: ${params.description || ""}`;
     if (toolName === "move_to_recycle_bin") return `File: ${params.path || ""}`;
     if (toolName === "search_files") return `Search: "${params.query || ""}"`;
     if (toolName === "set_reminder") return `Reminder: "${params.text || ""}"`;

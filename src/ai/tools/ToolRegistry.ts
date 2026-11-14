@@ -9,6 +9,10 @@ import { MoveToRecycleBinTool } from "./move_to_recycle_bin";
 import { StartTimerTool } from "./start_timer";
 import { StopTimerTool } from "./stop_timer";
 import { GetTimerStatusTool } from "./get_timer_status";
+import { CreateCodeFileTool } from "./create_code_file";
+import { PlaySpotifyTool } from "./play_spotify";
+import { SearchYoutubeTool } from "./search_youtube";
+import { DesktopGuideTool } from "./desktop_guide";
 
 export class ToolRegistry {
   private tools: Map<string, Tool> = new Map();
@@ -24,6 +28,10 @@ export class ToolRegistry {
     this.register(new StartTimerTool());
     this.register(new StopTimerTool());
     this.register(new GetTimerStatusTool());
+    this.register(new CreateCodeFileTool());
+    this.register(new PlaySpotifyTool());
+    this.register(new SearchYoutubeTool());
+    this.register(new DesktopGuideTool());
   }
 
   public register(tool: Tool): void {
@@ -117,6 +125,45 @@ Examples:
   "parameters": {
     "minutes": 25,
     "mode": "countdown"
+  }
+}
+\`\`\`
+- To create a code or script file and open it in Visual Studio Code:
+\`\`\`json
+{
+  "tool": "create_code_file",
+  "parameters": {
+    "filename": "hello.py",
+    "content": "print('Hello from Mintu!')",
+    "editor": "code"
+  }
+}
+\`\`\`
+- To play a song or artist on Spotify:
+\`\`\`json
+{
+  "tool": "play_spotify",
+  "parameters": {
+    "query": "Queen Bohemian Rhapsody"
+  }
+}
+\`\`\`
+- To search and play a video on YouTube:
+\`\`\`json
+{
+  "tool": "search_youtube",
+  "parameters": {
+    "query": "Rust programming tutorial"
+  }
+}
+\`\`\`
+- To guide the user across the desktop or move cursor:
+\`\`\`json
+{
+  "tool": "desktop_guide",
+  "parameters": {
+    "action": "guide_step",
+    "description": "Look at the taskbar icon at the bottom"
   }
 }
 \`\`\`
