@@ -982,29 +982,34 @@ fn get_api_key(provider: String) -> Result<Option<String>, String> {
 // Tool Primitive Commands
 // ==========================================
 
+// Security: allowed_dirs must never come from the webview to prevent sandbox escape.
 #[tauri::command]
 fn tools_move_to_recycle_bin(
     path: String,
-    allowed_dirs: Option<Vec<String>>,
 ) -> Result<String, String> {
-    let dirs = allowed_dirs.unwrap_or_else(tools::get_default_allowed_dirs);
+    let dirs = tools::get_default_allowed_dirs();
     tools::move_file_to_recycle_bin(&path, &dirs)
 }
 
+// Security: allowed_dirs must never come from the webview to prevent sandbox escape.
 #[tauri::command]
 fn tools_search_files(
     query: String,
     subfolder: Option<String>,
-    allowed_dirs: Option<Vec<String>>,
     max_results: Option<usize>,
 ) -> Result<Vec<tools::FileSearchResult>, String> {
-    let dirs = allowed_dirs.unwrap_or_else(tools::get_default_allowed_dirs);
+    let dirs = tools::get_default_allowed_dirs();
     tools::search_files_in_allowed_dirs(&query, subfolder.as_deref(), &dirs, max_results.unwrap_or(20))
 }
 
 #[tauri::command]
 fn tools_list_installed_apps() -> Result<Vec<tools::InstalledAppInfo>, String> {
     Ok(tools::list_installed_apps())
+}
+
+#[tauri::command]
+fn tools_resolve_app(name: String) -> Result<tools::InstalledAppInfo, String> {
+    tools::resolve_app_by_name(&name)
 }
 
 #[tauri::command]
@@ -1213,6 +1218,7 @@ pub fn run() {
             tools_move_to_recycle_bin,
             tools_search_files,
             tools_list_installed_apps,
+            tools_resolve_app,
             tools_open_app,
             tools_open_url,
             tools_read_clipboard,

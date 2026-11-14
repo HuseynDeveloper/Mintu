@@ -8,6 +8,9 @@ import { toolRegistry } from "./ToolRegistry";
 import { PendingToolApproval, ToolExecutionResult, ToolRisk } from "./Tool";
 import { eventBus } from "../../core/EventBus";
 
+// Security: tools in this set must NEVER be remembered as always-allowed.
+const NEVER_ALWAYS_ALLOW = new Set(["move_to_recycle_bin", "open_url"]);
+
 export class ToolExecutor {
   private pendingApproval: PendingToolApproval | null = null;
   private alwaysAllowedTools: Set<string> = new Set();
@@ -43,8 +46,8 @@ export class ToolExecutor {
       if (stored) {
         const list = JSON.parse(stored);
         if (Array.isArray(list)) {
-          // Never allow move_to_recycle_bin to be remembered
-          this.alwaysAllowedTools = new Set(list.filter((t) => t !== "move_to_recycle_bin"));
+          // Drop any tool in NEVER_ALWAYS_ALLOW from the saved list.
+          this.alwaysAllowedTools = new Set(list.filter((t) => !NEVER_ALWAYS_ALLOW.has(t)));
         }
       }
     } catch {
@@ -54,18 +57,18 @@ export class ToolExecutor {
 
   private saveAllowedTools() {
     try {
-      const arr = Array.from(this.alwaysAllowedTools).filter((t) => t !== "move_to_recycle_bin");
+      const arr = Array.from(this.alwaysAllowedTools).filter((t) => !NEVER_ALWAYS_ALLOW.has(t));
       localStorage.setItem("mintu_always_allowed_tools", JSON.stringify(arr));
     } catch {}
   }
 
   public isAlwaysAllowed(toolName: string): boolean {
-    if (toolName === "move_to_recycle_bin") return false;
+    if (NEVER_ALWAYS_ALLOW.has(toolName)) return false;
     return this.alwaysAllowedTools.has(toolName);
   }
 
   public setAlwaysAllowed(toolName: string, allowed: boolean): void {
-    if (toolName === "move_to_recycle_bin") return; // Hard rule
+    if (NEVER_ALWAYS_ALLOW.has(toolName)) return; // Hard rule
     if (allowed) {
       this.alwaysAllowedTools.add(toolName);
     } else {
@@ -142,6 +145,31 @@ export class ToolExecutor {
     // Trigger pet thinking with gear/spark animation
     eventBus.emit("pet:action", { type: "state", payload: "think" });
 
+    // For open_app: pre-validate by resolving the app name before showing approval card.
+    let resolvedAppPath: string | undefined;
+    if (toolName === "open_app") {
+      try {
+        const resolved = await this.invoke("tools_resolve_app", { name: params.name });
+        if (!resolved) {
+          const err = `Could not resolve application '${params.name}'`;
+          await this.logAudit(toolName, JSON.stringify(params), "failed", err);
+          return {
+            result: { success: false, summary: err, error: err },
+            formattedUntrustedData: `<untrusted_data source="tool:${toolName}">${err}</untrusted_data>`,
+          };
+        }
+        params = { ...params, name: resolved.name };
+        resolvedAppPath = resolved.path;
+      } catch (e: any) {
+        const err = e?.message || String(e);
+        await this.logAudit(toolName, JSON.stringify(params), "failed", err);
+        return {
+          result: { success: false, summary: err, error: err },
+          formattedUntrustedData: `<untrusted_data source="tool:${toolName}">${err}</untrusted_data>`,
+        };
+      }
+    }
+
     // Check if user confirmation is required
     let requiresApproval = false;
     if (risk === "modify") {
@@ -150,7 +178,7 @@ export class ToolExecutor {
       requiresApproval = !this.isAlwaysAllowed(toolName);
     }
 
-    const paramsSummary = this.summarizeParams(toolName, params);
+    const paramsSummary = this.summarizeParams(toolName, params, resolvedAppPath);
 
     if (requiresApproval) {
       // Pet looks curious when asking for confirmation
@@ -171,7 +199,7 @@ export class ToolExecutor {
         };
       }
 
-      if (decision === "always_allow" && risk === "open") {
+      if (decision === "always_allow" && risk === "open" && !NEVER_ALWAYS_ALLOW.has(toolName)) {
         this.setAlwaysAllowed(toolName, true);
       }
     }
@@ -211,8 +239,12 @@ export class ToolExecutor {
     }
   }
 
-  private summarizeParams(toolName: string, params: Record<string, any>): string {
-    if (toolName === "open_app") return `App: ${params.name || ""}`;
+  private summarizeParams(toolName: string, params: Record<string, any>, resolvedAppPath?: string): string {
+    if (toolName === "open_app") {
+      const appName = params.name || "";
+      if (resolvedAppPath) return `App: ${appName} (${resolvedAppPath})`;
+      return `App: ${appName}`;
+    }
     if (toolName === "open_url") return `URL: ${params.url || ""}`;
     if (toolName === "move_to_recycle_bin") return `File: ${params.path || ""}`;
     if (toolName === "search_files") return `Search: "${params.query || ""}"`;

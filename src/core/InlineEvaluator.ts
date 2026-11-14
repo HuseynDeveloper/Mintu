@@ -1,7 +1,162 @@
 /**
  * Mintu Inline Calculator & Unit Converter (v0.2.1)
  * Evaluates math expressions and common currency/unit conversions on the fly.
+ * Uses a safe recursive-descent parser instead of eval/Function.
  */
+
+/**
+ * Recursive-descent math parser supporting:
+ *   +, -, *, /, %, ^, ** (right-associative exponentiation)
+ *   unary + and -
+ *   decimal numbers
+ *   parentheses
+ * Returns null on any parse error or non-finite result.
+ */
+export function evaluateMath(input: string): number | null {
+  const src = input;
+  let pos = 0;
+
+  function peek(): string {
+    return pos < src.length ? src[pos] : "";
+  }
+
+  function skipSpaces(): void {
+    while (pos < src.length && (src[pos] === " " || src[pos] === "\t")) {
+      pos++;
+    }
+  }
+
+  function parseAtom(): number | null {
+    skipSpaces();
+
+    // Parenthesised sub-expression
+    if (peek() === "(") {
+      pos++; // consume '('
+      const val = parseExpr();
+      if (val === null) return null;
+      skipSpaces();
+      if (peek() !== ")") return null; // unmatched paren
+      pos++; // consume ')'
+      return val;
+    }
+
+    // Unary + or -
+    if (peek() === "+" || peek() === "-") {
+      const sign = peek() === "-" ? -1 : 1;
+      pos++;
+      const val = parseAtom();
+      if (val === null) return null;
+      return sign * val;
+    }
+
+    // Numeric literal
+    if (peek() >= "0" && peek() <= "9" || peek() === ".") {
+      let s = "";
+      while (pos < src.length && ((src[pos] >= "0" && src[pos] <= "9") || src[pos] === ".")) {
+        s += src[pos++];
+      }
+      if (s === "" || s === ".") return null;
+      const n = Number(s);
+      return isNaN(n) ? null : n;
+    }
+
+    return null; // unexpected character
+  }
+
+  // Right-associative exponentiation: parseAtom (^ | **) parsePow
+  function parsePow(): number | null {
+    const base = parseAtom();
+    if (base === null) return null;
+    skipSpaces();
+    // Handle ** (two chars)
+    if (pos + 1 < src.length && src[pos] === "*" && src[pos + 1] === "*") {
+      pos += 2;
+      const exp = parsePow(); // right-associative
+      if (exp === null) return null;
+      return Math.pow(base, exp);
+    }
+    // Handle ^
+    if (peek() === "^") {
+      pos++;
+      const exp = parsePow(); // right-associative
+      if (exp === null) return null;
+      return Math.pow(base, exp);
+    }
+    return base;
+  }
+
+  // Multiplicative: *, /, %
+  function parseMul(): number | null {
+    let left = parsePow();
+    if (left === null) return null;
+    while (true) {
+      skipSpaces();
+      if (peek() === "*") {
+        // Make sure it's not ** (exponent)
+        if (pos + 1 < src.length && src[pos + 1] === "*") break;
+        pos++;
+        const right = parsePow();
+        if (right === null) return null;
+        left *= right;
+      } else if (peek() === "/") {
+        pos++;
+        const right = parsePow();
+        if (right === null) return null;
+        left /= right;
+      } else if (peek() === "%") {
+        pos++;
+        const right = parsePow();
+        if (right === null) return null;
+        left %= right;
+      } else {
+        break;
+      }
+    }
+    return left;
+  }
+
+  // Additive: +, -
+  function parseExpr(): number | null {
+    let left = parseMul();
+    if (left === null) return null;
+    while (true) {
+      skipSpaces();
+      // Detect adjacent digit tokens like "3 3" - whitespace between two numbers is a syntax error
+      if (peek() >= "0" && peek() <= "9") return null;
+      if (peek() === "+") {
+        pos++;
+        // Reject "1 + + " style trailing operator
+        skipSpaces();
+        if (peek() === "" || peek() === ")") return null;
+        const right = parseMul();
+        if (right === null) return null;
+        left += right;
+      } else if (peek() === "-") {
+        pos++;
+        skipSpaces();
+        if (peek() === "" || peek() === ")") return null;
+        const right = parseMul();
+        if (right === null) return null;
+        left -= right;
+      } else {
+        break;
+      }
+    }
+    return left;
+  }
+
+  const result = parseExpr();
+  if (result === null) return null;
+
+  skipSpaces();
+
+  // Whitespace between two digit sequences (e.g. "3 3 + 1") detection:
+  // If there are still characters left in the string that are not consumed, it is a syntax error.
+  if (pos !== src.length) return null;
+
+  if (!isFinite(result) || isNaN(result)) return null;
+  return result;
+}
 
 export function tryEvaluateInline(query: string): string | null {
   const trimmed = query.trim();
@@ -9,14 +164,11 @@ export function tryEvaluateInline(query: string): string | null {
 
   // 1. Math expressions
   if (/^[\d\s\+\-\*\/\%\^\(\)\.]+$/.test(trimmed) && /[\+\-\*\/\%\^]/.test(trimmed)) {
-    try {
-      const sanitized = trimmed.replace(/\^/g, "**");
-      const fn = new Function(`"use strict"; return (${sanitized});`);
-      const val = fn();
-      if (typeof val === "number" && !isNaN(val) && isFinite(val)) {
-        return `= ${Number(val.toFixed(4))}`;
-      }
-    } catch {}
+    const val = evaluateMath(trimmed);
+    if (val !== null && isFinite(val)) {
+      return `= ${Number(val.toFixed(4))}`;
+    }
+    return null;
   }
 
   // 2. Simple currency & unit converter

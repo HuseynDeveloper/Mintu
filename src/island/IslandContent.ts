@@ -33,7 +33,7 @@ import { moduleRegistry } from "../modules/ModuleRegistry";
 import { voiceManager } from "../voice/VoiceManager";
 import { xpManager } from "../gamification/XPManager";
 import { smartClipboard } from "../clipboard/SmartClipboard";
-import { updateChecker } from "../updater/UpdateChecker";
+import { updateChecker, UpdateChecker } from "../updater/UpdateChecker";
 import { soundEngine } from "../core/SoundEngine";
 import { tryEvaluateInline } from "../core/InlineEvaluator";
 import { i18n, SupportedLanguage } from "../core/i18n";
@@ -1989,7 +1989,7 @@ export class IslandContentRenderer {
 
     updateOpenBtn?.addEventListener("click", () => {
       const cached = updateChecker.getCachedUpdate();
-      const url = cached?.releaseUrl || "https://github.com/TalibliTural/Mintu/releases";
+      const url = cached?.releaseUrl || `https://github.com/${UpdateChecker.GITHUB_REPO}/releases`;
       if (typeof window !== "undefined") {
         import("@tauri-apps/api/core")
           .then(({ invoke }) => {

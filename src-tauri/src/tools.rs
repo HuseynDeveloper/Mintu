@@ -305,29 +305,53 @@ fn scan_shortcuts(dir: &Path, out: &mut Vec<InstalledAppInfo>) {
     }
 }
 
-pub fn open_app_by_name(name: &str) -> Result<String, String> {
+pub fn resolve_app_by_name(name: &str) -> Result<InstalledAppInfo, String> {
     let q = name.trim().to_lowercase();
+    if q.is_empty() {
+        return Err("Application name must not be empty".to_string());
+    }
+    if q.len() > 100 {
+        return Err("Application name is too long (max 100 characters)".to_string());
+    }
+
     let apps = list_installed_apps();
 
-    // Direct exact match
+    // Exact name match wins
     if let Some(found) = apps.iter().find(|a| a.name.to_lowercase() == q) {
-        return launch_path(&found.path, &found.name);
+        return Ok(found.clone());
     }
 
-    // Partial contains match
-    if let Some(found) = apps.iter().find(|a| a.name.to_lowercase().contains(&q)) {
-        return launch_path(&found.path, &found.name);
+    // Partial contains match - only if exactly one result
+    let partials: Vec<&InstalledAppInfo> = apps.iter().filter(|a| a.name.to_lowercase().contains(&q)).collect();
+    match partials.len() {
+        1 => return Ok(partials[0].clone()),
+        n if n > 1 => {
+            let names: Vec<String> = partials.iter().take(5).map(|a| a.name.clone()).collect();
+            return Err(format!(
+                "Ambiguous app name '{}' matches {} apps: {}",
+                name,
+                n,
+                names.join(", ")
+            ));
+        }
+        _ => {}
     }
 
-    // Common system exes
-    if q == "calc" || q == "calculator" {
-        return launch_path("calc.exe", "Calculator");
+    // Common system exe fallbacks
+    let ql = name.trim().to_lowercase();
+    if ql == "calc" || ql == "calculator" {
+        return Ok(InstalledAppInfo { name: "Calculator".to_string(), path: "calc.exe".to_string() });
     }
-    if q == "notepad" {
-        return launch_path("notepad.exe", "Notepad");
+    if ql == "notepad" {
+        return Ok(InstalledAppInfo { name: "Notepad".to_string(), path: "notepad.exe".to_string() });
     }
 
     Err(format!("Could not find an installed application matching '{}'", name))
+}
+
+pub fn open_app_by_name(name: &str) -> Result<String, String> {
+    let resolved = resolve_app_by_name(name)?;
+    launch_path(&resolved.path, &resolved.name)
 }
 
 fn launch_path(target: &str, display_name: &str) -> Result<String, String> {
@@ -352,11 +376,47 @@ fn launch_path(target: &str, display_name: &str) -> Result<String, String> {
     }
 }
 
+pub fn validate_browser_url(url: &str) -> Result<(), String> {
+    if url.len() > 2048 {
+        return Err("URL exceeds maximum allowed length of 2048 characters".to_string());
+    }
+
+    if url.chars().any(|c| c.is_control() || c == ' ') {
+        return Err("URL must not contain whitespace or control characters".to_string());
+    }
+
+    let scheme_rest = if let Some(rest) = url.strip_prefix("https://") {
+        rest
+    } else if let Some(rest) = url.strip_prefix("http://") {
+        rest
+    } else {
+        return Err("Security restriction: Mintu can only open http:// and https:// URLs.".to_string());
+    };
+
+    // Authority is text before first '/', '?', or '#'
+    let authority_end = scheme_rest
+        .find(|c| c == '/' || c == '?' || c == '#')
+        .unwrap_or(scheme_rest.len());
+    let authority = &scheme_rest[..authority_end];
+
+    if authority.is_empty() {
+        return Err("URL must have a non-empty authority (host)".to_string());
+    }
+
+    if authority.contains('@') {
+        return Err("URL authority must not contain '@' (potential credential injection)".to_string());
+    }
+
+    if authority.contains('\\') {
+        return Err("URL authority must not contain backslashes".to_string());
+    }
+
+    Ok(())
+}
+
 pub fn open_browser_url(url: &str) -> Result<String, String> {
     let trimmed = url.trim();
-    if !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
-        return Err("Security restriction: Mintu can only open http:// and https:// URLs.".to_string());
-    }
+    validate_browser_url(trimmed)?;
 
     let wide_open: Vec<u16> = "open\0".encode_utf16().collect();
     let wide_url: Vec<u16> = trimmed.encode_utf16().chain(std::iter::once(0)).collect();
@@ -376,6 +436,48 @@ pub fn open_browser_url(url: &str) -> Result<String, String> {
         Ok(format!("Opened {}", trimmed))
     } else {
         Err(format!("Failed to open URL in browser (code {})", res as isize))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_browser_url;
+
+    #[test]
+    fn test_valid_urls() {
+        assert!(validate_browser_url("https://example.com").is_ok());
+        assert!(validate_browser_url("http://localhost:3000/path").is_ok());
+        assert!(validate_browser_url("https://example.com/path?q=1#anchor").is_ok());
+    }
+
+    #[test]
+    fn test_reject_non_http_schemes() {
+        assert!(validate_browser_url("file:///etc/passwd").is_err());
+        assert!(validate_browser_url("javascript:alert(1)").is_err());
+        assert!(validate_browser_url("ftp://example.com").is_err());
+    }
+
+    #[test]
+    fn test_reject_credential_injection() {
+        assert!(validate_browser_url("https://trusted.com@evil.com/").is_err());
+    }
+
+    #[test]
+    fn test_reject_empty_authority() {
+        assert!(validate_browser_url("https://").is_err());
+        assert!(validate_browser_url("https:///path").is_err());
+    }
+
+    #[test]
+    fn test_reject_whitespace_and_control() {
+        assert!(validate_browser_url("https://example.com/path with spaces").is_err());
+        assert!(validate_browser_url("https://example.com/\x00null").is_err());
+    }
+
+    #[test]
+    fn test_reject_too_long() {
+        let long_url = format!("https://example.com/{}", "a".repeat(2100));
+        assert!(validate_browser_url(&long_url).is_err());
     }
 }
 

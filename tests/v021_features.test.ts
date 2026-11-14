@@ -28,3 +28,14 @@ test("v0.2.1: SoundEngine Mute and State", () => {
   soundEngine.setMuted(false);
   assert.equal(soundEngine.getIsMuted(), false);
 });
+
+test("v0.2.3: Safe math parser - new operators and edge cases", () => {
+  assert.equal(tryEvaluateInline("-5 + 2"), "= -3");
+  assert.equal(tryEvaluateInline("2 ** 3"), "= 8");
+  assert.equal(tryEvaluateInline("2 ^ 3 ^ 2"), "= 512"); // right-associative: 2^(3^2) = 2^9 = 512
+  assert.equal(tryEvaluateInline("10 % 4"), "= 2");
+  assert.equal(tryEvaluateInline("1 / 0"), null);
+  assert.equal(tryEvaluateInline("(1 + 2"), null);
+  assert.equal(tryEvaluateInline("1 + + "), null);
+  assert.equal(tryEvaluateInline("3 3 + 1"), null);
+});
