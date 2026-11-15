@@ -86,90 +86,26 @@ export class ToolRegistry {
   }
 
   public getPromptInstructions(): string {
-    const defs = this.getDefinitions();
-    return `
-You have access to the following desktop tools:
-${JSON.stringify(defs, null, 2)}
+    const toolList = this.getAllTools()
+      .map((t) => {
+        const props = Object.keys(t.definition.parameters.properties || {}).join(", ");
+        return `- ${t.definition.name}(${props}): ${t.definition.description}`;
+      })
+      .join("\n");
 
-To perform an action or invoke a desktop tool, output a JSON block in this exact format:
+    return `Desktop Tools:
+${toolList}
+
+To execute a tool, output a JSON block:
 \`\`\`json
-{
-  "tool": "tool_name",
-  "parameters": { ... }
-}
+{"tool": "name", "parameters": { ... }}
 \`\`\`
-
 Examples:
-- To open Google, YouTube, or any website:
-\`\`\`json
-{
-  "tool": "open_url",
-  "parameters": {
-    "url": "https://www.google.com"
-  }
-}
-\`\`\`
-- To launch an application (Spotify, Calculator, Notepad, etc.):
-\`\`\`json
-{
-  "tool": "open_app",
-  "parameters": {
-    "name": "Spotify"
-  }
-}
-\`\`\`
-- To start a timer or Pomodoro:
-\`\`\`json
-{
-  "tool": "start_timer",
-  "parameters": {
-    "minutes": 25,
-    "mode": "countdown"
-  }
-}
-\`\`\`
-- To create a code or script file and open it in Visual Studio Code:
-\`\`\`json
-{
-  "tool": "create_code_file",
-  "parameters": {
-    "filename": "hello.py",
-    "content": "print('Hello from Mintu!')",
-    "editor": "code"
-  }
-}
-\`\`\`
-- To play a song or artist on Spotify:
-\`\`\`json
-{
-  "tool": "play_spotify",
-  "parameters": {
-    "query": "Queen Bohemian Rhapsody"
-  }
-}
-\`\`\`
-- To search and play a video on YouTube:
-\`\`\`json
-{
-  "tool": "search_youtube",
-  "parameters": {
-    "query": "Rust programming tutorial"
-  }
-}
-\`\`\`
-- To guide the user across the desktop or move cursor:
-\`\`\`json
-{
-  "tool": "desktop_guide",
-  "parameters": {
-    "action": "guide_step",
-    "description": "Look at the taskbar icon at the bottom"
-  }
-}
-\`\`\`
-
-Never say you cannot open an application, search the web, or assist with a desktop task: output the corresponding tool call JSON block instead. Mintu will execute the tool safely.
-`;
+- Open website: {"tool": "open_url", "parameters": {"url": "https://google.com"}}
+- Launch app: {"tool": "open_app", "parameters": {"name": "Spotify"}}
+- Create code file: {"tool": "create_code_file", "parameters": {"filename": "app.py", "content": "print('hello')", "editor": "code"}}
+- Play Spotify: {"tool": "play_spotify", "parameters": {"query": "Bohemian Rhapsody"}}
+- Search YouTube: {"tool": "search_youtube", "parameters": {"query": "Mintu companion"}}`;
   }
 }
 

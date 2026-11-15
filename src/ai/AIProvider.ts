@@ -110,7 +110,7 @@ export class LlamaCppProvider implements AIProvider {
         // Ensure sidecar is alive with valid installed model
         const targetModel = this.currentModelId || localStorage.getItem("mintu_active_model") || "qwen2.5-0.5b";
         const sidecarInfo: SidecarInfo = await this.invoke("ensure_sidecar_running").catch(async () => {
-          return await this.invoke("start_sidecar", { modelId: targetModel });
+          return await this.invoke("start_sidecar", { modelId: targetModel, contextLength: 4096 });
         });
 
         if (sidecarInfo.status === "error" || !sidecarInfo.port) {

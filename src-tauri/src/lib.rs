@@ -599,7 +599,7 @@ async fn start_sidecar(
         .get_model_path(&model_id)
         .ok_or_else(|| format!("Model {} is not installed on disk", model_id))?;
 
-    let ctx = context_length.unwrap_or(2048);
+    let ctx = context_length.unwrap_or(4096);
     let th = threads.unwrap_or_else(|| {
         let p = state.models_dir.read().unwrap();
         let hw = detect_hardware(&p);

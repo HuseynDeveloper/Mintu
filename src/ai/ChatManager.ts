@@ -543,7 +543,9 @@ export class ChatManager {
     const apiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: systemPromptFull },
     ];
-    for (const m of this.messages.slice(0, -1)) {
+    const history = this.messages.slice(0, -1);
+    const recentHistory = history.length > 16 ? history.slice(-16) : history;
+    for (const m of recentHistory) {
       apiMessages.push({ role: m.role, content: m.content });
     }
 
@@ -782,7 +784,9 @@ export class ChatManager {
     const apiMessages: Array<{ role: string; content: string }> = [
       { role: "system", content: systemPromptFull },
     ];
-    for (const m of this.messages.slice(0, -1)) {
+    const history = this.messages.slice(0, -1);
+    const recentHistory = history.length > 16 ? history.slice(-16) : history;
+    for (const m of recentHistory) {
       apiMessages.push({ role: m.role, content: m.content });
     }
 
