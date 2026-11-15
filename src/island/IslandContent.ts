@@ -37,6 +37,7 @@ import { updateChecker, UpdateChecker } from "../updater/UpdateChecker";
 import { soundEngine } from "../core/SoundEngine";
 import { tryEvaluateInline } from "../core/InlineEvaluator";
 import { i18n, SupportedLanguage } from "../core/i18n";
+import { dailyRecapManager } from "../productivity/DailyRecap";
 
 export interface NotificationPayload {
   icon?: string;
@@ -238,6 +239,12 @@ export class IslandContentRenderer {
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
               </svg>
             </button>
+            <button class="icon-btn" id="btn-focus-timer-toggle" title="Fokus Taymeri (Pomodoro)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </button>
             <button class="icon-btn" id="btn-settings-toggle" title="Settings">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -287,15 +294,44 @@ export class IslandContentRenderer {
               <span class="smart-clip-badge" id="smart-clip-badge">Code</span>
               <span class="smart-clip-text" id="smart-clip-text">Koddakı xətanı yoxla</span>
             </div>
+            <button class="smart-clip-action-btn" id="btn-smart-clip-format" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); margin-right: 4px;">Formatla</button>
             <button class="smart-clip-action-btn" id="btn-smart-clip-action">Sorğu ver</button>
             <button class="smart-clip-close-btn" id="btn-smart-clip-close">✕</button>
           </div>
 
           <!-- Update Available Banner (Milestone 8) -->
           <div class="mintu-update-banner" id="mintu-update-banner" style="display: none;">
-            <span id="mintu-update-text">Mintu v0.2.3 hazırdır!</span>
+            <span id="mintu-update-text">Mintu v0.2.3.1 hazırdır!</span>
             <button class="btn-update-action" id="btn-mintu-update-open">Yenilə</button>
             <button class="btn-update-close" id="btn-mintu-update-close">✕</button>
+          </div>
+
+          <!-- NotchDrop Card (v0.2.3.1) -->
+          <div class="notchdrop-card" id="mintu-notchdrop-card" style="display: none;">
+            <div class="notchdrop-header">
+              <span class="notchdrop-badge" id="notchdrop-badge">Fayl</span>
+              <span class="notchdrop-filename" id="notchdrop-filename">fayl</span>
+              <span class="notchdrop-filesize" id="notchdrop-filesize"></span>
+              <button class="notchdrop-close-btn" id="btn-notchdrop-close" title="Bağla">✕</button>
+            </div>
+            <div class="notchdrop-actions">
+              <button class="notchdrop-action-btn" id="btn-notchdrop-summarize">Xülasə çıxar</button>
+              <button class="notchdrop-action-btn" id="btn-notchdrop-analyze">Kodu / mətni analiz et</button>
+              <button class="notchdrop-action-btn primary" id="btn-notchdrop-send">Söhbətə göndər</button>
+            </div>
+          </div>
+
+          <!-- Focus & Pomodoro Timer Banner (v0.2.3.1) -->
+          <div class="island-focus-timer-banner" id="island-focus-timer-banner" style="display: none;">
+            <div class="focus-timer-info">
+              <span class="focus-timer-badge">Fokus</span>
+              <span class="focus-timer-digits" id="focus-timer-digits">25:00</span>
+            </div>
+            <div class="focus-timer-actions">
+              <button class="focus-timer-btn" id="btn-focus-timer-toggle-run">Başla</button>
+              <button class="focus-timer-btn secondary" id="btn-focus-timer-reset">Sıfırla</button>
+              <button class="focus-timer-btn close" id="btn-focus-timer-close">✕</button>
+            </div>
           </div>
 
           <!-- Scrollable chat body containing greeting, messages, and suggestions -->
@@ -334,6 +370,7 @@ export class IslandContentRenderer {
               <button class="chip-btn" id="chip-ask-ai" data-chip="Ask AI">Ask AI</button>
               <button class="chip-btn" id="chip-explain-code" data-chip="Explain code">Explain code</button>
               <button class="chip-btn" id="chip-tell-joke" data-chip="Tell a joke">Tell a joke</button>
+              <button class="chip-btn" id="chip-daily-recap" data-chip="Günün Xülasəsi">Günün Xülasəsi</button>
             </div>
           </div>
 
@@ -343,6 +380,13 @@ export class IslandContentRenderer {
             <div class="chat-attached-chips" id="chat-attached-chips"></div>
             <div class="chat-input-pill">
               <input type="text" placeholder="Type a message or speak..." class="chat-text-input" id="chat-user-input" />
+              <button class="chat-screen-btn" id="chat-screen-btn" title="Buna bax (Ekranı çək və analiz et)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+              </button>
               <button class="chat-mic-btn" id="chat-mic-btn" title="Voice Input / Click or hold to talk">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
@@ -635,7 +679,7 @@ export class IslandContentRenderer {
               <div class="setting-item">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <div>
-                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;" id="settings-mintu-version-text">Mintu Version v0.2.3</div>
+                    <div style="font-size: 12px; font-weight: 500; color: #E5E7EB;" id="settings-mintu-version-text">Mintu Version v0.2.3.1</div>
                     <div class="setting-hint" id="settings-updater-status">Up to date with GitHub Releases.</div>
                   </div>
                   <button class="btn-small-action" id="btn-check-updates-now" style="font-size: 11px; height: 28px;">Check Updates</button>
@@ -1208,6 +1252,19 @@ export class IslandContentRenderer {
     this.chipsRowEl.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest(".chip-btn") as HTMLElement;
       if (btn) {
+        if (btn.id === "chip-daily-recap" || btn.dataset.chip === "Günün Xülasəsi") {
+          e.stopPropagation();
+          const recap = dailyRecapManager.generateRecapMarkdown(xpManager.getStats().level);
+          if (typeof navigator !== "undefined" && navigator.clipboard) {
+            navigator.clipboard.writeText(recap).catch(() => {});
+          }
+          this.chatInputEl.value = `Bugünkü iş və məhsuldarlıq xülasəm haqqında qısa dəyərləndirmə et:\n\n${recap}`;
+          this.submitUserMessage();
+          eventBus.emit("pet:say", { text: "Bugünkü iş xülasən panoya kopyalandı!" });
+          dailyRecapManager.recordXP(10);
+          xpManager.addXP(10, "Günün iş xülasəsi");
+          return;
+        }
         this.chatInputEl.value = btn.textContent?.trim() || btn.dataset.chip || "";
         this.submitUserMessage();
       }
@@ -2027,6 +2084,316 @@ export class IslandContentRenderer {
         if (updaterStatusHint) updaterStatusHint.textContent = "Yeniləmə yoxlanılarkən xəta baş verdi.";
       }
     });
+
+    this.setupNotchDropHandlers();
+    this.setupFocusTimerHandlers();
+    this.setupScreenVisionHandlers();
+    this.setupPetInteractiveHandlers();
+    this.setupSmartClipboardFormatterHandlers();
+  }
+
+  // ==========================================
+  // Milestone 8+ (v0.2.3.1): NotchDrop, Focus Timer, Screen Vision, Pet Interactive
+  // ==========================================
+
+  private currentDroppedFile: { name: string; size: number; type: string; snippet: string } | null = null;
+
+  private setupNotchDropHandlers(): void {
+    const notchCard = this.slotExpanded.querySelector("#mintu-notchdrop-card") as HTMLElement;
+    const badgeEl = this.slotExpanded.querySelector("#notchdrop-badge") as HTMLElement;
+    const filenameEl = this.slotExpanded.querySelector("#notchdrop-filename") as HTMLElement;
+    const filesizeEl = this.slotExpanded.querySelector("#notchdrop-filesize") as HTMLElement;
+    const closeBtn = this.slotExpanded.querySelector("#btn-notchdrop-close") as HTMLButtonElement;
+    const btnSummarize = this.slotExpanded.querySelector("#btn-notchdrop-summarize") as HTMLButtonElement;
+    const btnAnalyze = this.slotExpanded.querySelector("#btn-notchdrop-analyze") as HTMLButtonElement;
+    const btnSend = this.slotExpanded.querySelector("#btn-notchdrop-send") as HTMLButtonElement;
+
+    ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+      window.addEventListener(eventName, (e) => e.preventDefault(), false);
+      this.container.addEventListener(eventName, (e) => e.preventDefault(), false);
+    });
+
+    this.container.addEventListener("dragover", () => {
+      this.container.classList.add("island-dragover");
+    });
+
+    this.container.addEventListener("dragleave", (e) => {
+      if (!this.container.contains(e.relatedTarget as Node)) {
+        this.container.classList.remove("island-dragover");
+      }
+    });
+
+    this.container.addEventListener("drop", async (e: DragEvent) => {
+      this.container.classList.remove("island-dragover");
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      const name = file.name;
+      const size = file.size;
+      const ext = name.split(".").pop()?.toLowerCase() || "";
+
+      let typeCategory = "Fayl";
+      if (["js", "ts", "py", "rs", "html", "css", "json", "c", "cpp", "go", "sql", "sh", "java"].includes(ext)) {
+        typeCategory = "Kod";
+      } else if (["png", "jpg", "jpeg", "webp", "svg", "gif", "bmp"].includes(ext)) {
+        typeCategory = "Şəkil";
+      } else if (["pdf", "txt", "md", "csv", "log"].includes(ext)) {
+        typeCategory = "Sənəd";
+      }
+
+      let snippet = "";
+      if (size < 1024 * 1024 && !["png", "jpg", "jpeg", "webp", "gif", "bmp", "pdf"].includes(ext)) {
+        try {
+          const raw = await file.text();
+          snippet = raw.slice(0, 3000);
+        } catch {
+          snippet = `[Fayl: ${name}]`;
+        }
+      }
+
+      this.currentDroppedFile = { name, size, type: typeCategory, snippet };
+
+      if (badgeEl) badgeEl.textContent = typeCategory;
+      if (filenameEl) filenameEl.textContent = name;
+      if (filesizeEl) {
+        const kb = Math.round(size / 1024);
+        filesizeEl.textContent = kb > 1024 ? `(${ (kb / 1024).toFixed(1) } MB)` : `(${kb} KB)`;
+      }
+
+      if (notchCard) notchCard.style.display = "flex";
+
+      this.switchSubView("chat");
+      eventBus.emit("island:request-state", "expanded");
+      eventBus.emit("pet:say", { text: `Fayl qəbul edildi: ${name}` });
+      soundEngine.playCuteChirp("click");
+    });
+
+    closeBtn?.addEventListener("click", () => {
+      if (notchCard) notchCard.style.display = "none";
+      this.currentDroppedFile = null;
+    });
+
+    btnSummarize?.addEventListener("click", () => {
+      if (!this.currentDroppedFile) return;
+      const { name, snippet } = this.currentDroppedFile;
+      this.chatInputEl.value = snippet
+        ? `Bu faylın məzmununu xülasə et və əsas məqamları vurğula:\n\n[Fayl: ${name}]\n${snippet}`
+        : `Zəhmət olmasa "${name}" faylının məzmununu ümumi olaraq izah et.`;
+      if (notchCard) notchCard.style.display = "none";
+      dailyRecapManager.recordFileProcessed();
+      dailyRecapManager.recordXP(15);
+      xpManager.addXP(15, "NotchDrop fayl xülasəsi");
+      this.submitUserMessage();
+    });
+
+    btnAnalyze?.addEventListener("click", () => {
+      if (!this.currentDroppedFile) return;
+      const { name, snippet } = this.currentDroppedFile;
+      this.chatInputEl.value = snippet
+        ? `Bu fayldakı kodu / mətni analiz et, potensial xətaları tap və izah et:\n\n[Fayl: ${name}]\n${snippet}`
+        : `Zəhmət olmasa "${name}" faylının strukturunu analiz et.`;
+      if (notchCard) notchCard.style.display = "none";
+      dailyRecapManager.recordFileProcessed();
+      dailyRecapManager.recordXP(15);
+      xpManager.addXP(15, "NotchDrop fayl analizi");
+      this.submitUserMessage();
+    });
+
+    btnSend?.addEventListener("click", () => {
+      if (!this.currentDroppedFile) return;
+      const { name, snippet } = this.currentDroppedFile;
+      this.chatInputEl.value = snippet
+        ? `[Fayl: ${name}]\n${snippet}\n\nBu fayl haqqında sualım: `
+        : `[Fayl: ${name}] `;
+      if (notchCard) notchCard.style.display = "none";
+      this.chatInputEl.focus();
+    });
+  }
+
+  private focusSecondsLeft: number = 1500;
+  private isFocusTimerRunning: boolean = false;
+  private focusTimerInterval: number | null = null;
+
+  private setupFocusTimerHandlers(): void {
+    const toggleBtn = this.slotExpanded.querySelector("#btn-focus-timer-toggle") as HTMLButtonElement;
+    const banner = this.slotExpanded.querySelector("#island-focus-timer-banner") as HTMLElement;
+    const digitsEl = this.slotExpanded.querySelector("#focus-timer-digits") as HTMLElement;
+    const toggleRunBtn = this.slotExpanded.querySelector("#btn-focus-timer-toggle-run") as HTMLButtonElement;
+    const resetBtn = this.slotExpanded.querySelector("#btn-focus-timer-reset") as HTMLButtonElement;
+    const closeBtn = this.slotExpanded.querySelector("#btn-focus-timer-close") as HTMLButtonElement;
+
+    const updateDisplay = () => {
+      const m = Math.floor(this.focusSecondsLeft / 60);
+      const s = this.focusSecondsLeft % 60;
+      if (digitsEl) digitsEl.textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    };
+
+    toggleBtn?.addEventListener("click", () => {
+      if (!banner) return;
+      const isHidden = banner.style.display === "none";
+      banner.style.display = isHidden ? "flex" : "none";
+      if (isHidden) soundEngine.playCuteChirp("click");
+    });
+
+    closeBtn?.addEventListener("click", () => {
+      if (banner) banner.style.display = "none";
+    });
+
+    toggleRunBtn?.addEventListener("click", () => {
+      if (this.isFocusTimerRunning) {
+        if (this.focusTimerInterval) {
+          clearInterval(this.focusTimerInterval);
+          this.focusTimerInterval = null;
+        }
+        this.isFocusTimerRunning = false;
+        if (toggleRunBtn) toggleRunBtn.textContent = "Davam et";
+      } else {
+        this.isFocusTimerRunning = true;
+        if (toggleRunBtn) toggleRunBtn.textContent = "Fasilə";
+        soundEngine.playCuteChirp("click");
+        eventBus.emit("pet:say", { text: "Fokus taymeri başladı! Uğurlar!" });
+
+        this.focusTimerInterval = window.setInterval(() => {
+          this.focusSecondsLeft--;
+          updateDisplay();
+
+          if (this.focusSecondsLeft <= 0) {
+            if (this.focusTimerInterval) {
+              clearInterval(this.focusTimerInterval);
+              this.focusTimerInterval = null;
+            }
+            this.isFocusTimerRunning = false;
+            this.focusSecondsLeft = 1500;
+            updateDisplay();
+            if (toggleRunBtn) toggleRunBtn.textContent = "Başla";
+
+            soundEngine.playCuteChirp("level-up");
+            dailyRecapManager.recordFocus(25);
+            dailyRecapManager.recordXP(25);
+            xpManager.recordPomodoro(25);
+            eventBus.emit("pet:say", { text: "Təbriklər! 25 dəqiqəlik fokus tamamlandı (+25 XP)!" });
+          }
+        }, 1000);
+      }
+    });
+
+    resetBtn?.addEventListener("click", () => {
+      if (this.focusTimerInterval) {
+        clearInterval(this.focusTimerInterval);
+        this.focusTimerInterval = null;
+      }
+      this.isFocusTimerRunning = false;
+      this.focusSecondsLeft = 1500;
+      updateDisplay();
+      if (toggleRunBtn) toggleRunBtn.textContent = "Başla";
+    });
+  }
+
+  private setupScreenVisionHandlers(): void {
+    const screenBtn = this.slotExpanded.querySelector("#chat-screen-btn") as HTMLButtonElement;
+    screenBtn?.addEventListener("click", async () => {
+      soundEngine.playCuteChirp("click");
+      eventBus.emit("pet:say", { text: "Ekran nəzərdən keçirilir..." });
+
+      try {
+        const ctx = await appBridge.captureContext();
+        if (ctx?.image_base64) {
+          this.addAttachedChip({
+            type: "image",
+            label: "Ekran Görüntüsü",
+            data: ctx.image_base64,
+            appName: ctx.app_info?.process_name,
+          });
+        }
+        if (ctx?.text && ctx.text.trim()) {
+          this.chatInputEl.value = `Ekrandakı bu mətni və ya xətanı analiz et: "${ctx.text.trim().slice(0, 300)}"`;
+        } else {
+          this.chatInputEl.value = "Ekrandakı bu görüntünü analiz et və xətaları/həll yolunu de.";
+        }
+        this.chatInputEl.focus();
+        dailyRecapManager.recordXP(10);
+        xpManager.addXP(10, "Ekran analiz köməkçisi");
+      } catch {
+        this.chatInputEl.value = "Ekrandakı bu problemi necə həll edə bilərəm?";
+        this.chatInputEl.focus();
+      }
+    });
+  }
+
+  private setupPetInteractiveHandlers(): void {
+    const petElements = this.container.querySelectorAll(".slot-left-pet-anchor, .expanded-pet");
+    let pettedCount = 0;
+
+    petElements.forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        el.classList.add("pet-happy-bounce");
+        setTimeout(() => el.classList.remove("pet-happy-bounce"), 450);
+        soundEngine.playCuteChirp("happy");
+
+        if (pettedCount < 3) {
+          pettedCount++;
+          xpManager.addXP(5, "Mintu ilə əlaqə");
+          dailyRecapManager.recordXP(5);
+        }
+
+        const phrases = [
+          "Mintu səninlə işləməyi çox sevir!",
+          "Kod yazmaqda sənə kömək etməkdən zövq alıram!",
+          "Əla işləyirsən, davam et!",
+          "Möhtəşəm layihələr yaradırıq!",
+        ];
+        const pick = phrases[Math.floor(Math.random() * phrases.length)];
+        eventBus.emit("pet:say", { text: pick });
+      });
+    });
+
+    // Night Owl greeting
+    const hour = new Date().getHours();
+    if (hour >= 23 || hour < 6) {
+      if (typeof sessionStorage !== "undefined" && !sessionStorage.getItem("mintu_night_greeted")) {
+        setTimeout(() => {
+          eventBus.emit("pet:say", { text: "Gecə saatıdır, gözlərini qoru və dincəlməyi unutma!" });
+          sessionStorage.setItem("mintu_night_greeted", "true");
+        }, 3500);
+      }
+    }
+  }
+
+  private setupSmartClipboardFormatterHandlers(): void {
+    const formatBtn = this.slotExpanded.querySelector("#btn-smart-clip-format") as HTMLButtonElement;
+    formatBtn?.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      try {
+        const text = await appBridge.readClipboardText();
+        if (!text || !text.trim()) return;
+
+        let formatted = "";
+        try {
+          const parsed = JSON.parse(text);
+          formatted = JSON.stringify(parsed, null, 2);
+        } catch {
+          formatted = text
+            .split("\n")
+            .map((line) => line.trimEnd())
+            .join("\n")
+            .trim();
+        }
+
+        if (formatted) {
+          if (typeof navigator !== "undefined" && navigator.clipboard) {
+            await navigator.clipboard.writeText(formatted);
+          }
+          eventBus.emit("pet:say", { text: "Pano məzmunu formatlandı və kopyalandı!" });
+          soundEngine.playCuteChirp("click");
+          dailyRecapManager.recordXP(5);
+          xpManager.addXP(5, "Pano formatlama");
+        }
+      } catch {
+        eventBus.emit("pet:say", { text: "Pano oxunarkən xəta baş verdi." });
+      }
+    });
   }
 
   private setupContextAndMediaHandlers(): void {
@@ -2683,6 +3050,8 @@ export class IslandContentRenderer {
     this.chatInputEl.value = "";
     this.isUserScrolledUp = false;
     this.scrollToBottom(true);
+    dailyRecapManager.recordMessage();
+    dailyRecapManager.recordXP(2);
     if (this.editingMessageId) {
       const editId = this.editingMessageId;
       this.editingMessageId = null;
@@ -4816,7 +5185,7 @@ export class IslandContentRenderer {
     if (hintClip) hintClip.textContent = t.settings.smartClipboardHint;
 
     const verEl = this.slotExpanded.querySelector("#settings-mintu-version-text");
-    if (verEl) verEl.textContent = `${t.settings.mintuVersion} v0.2.3`;
+    if (verEl) verEl.textContent = `${t.settings.mintuVersion} v0.2.3.1`;
     const btnCheckUp = this.slotExpanded.querySelector("#btn-check-updates-now");
     if (btnCheckUp) btnCheckUp.textContent = t.settings.checkUpdates;
 

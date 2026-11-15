@@ -3499,5 +3499,232 @@ body {
   background: #34d399;
 }
 
+/* ==========================================
+ * Milestone 8+ (v0.2.3.1) New Capabilities
+ * NotchDrop, Focus Timer, Screen Vision, Pet Bounce
+ * ========================================== */
+
+/* NotchDrop Card */
+.notchdrop-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 12px 4px 12px;
+  padding: 8px 12px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(14px);
+  animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.notchdrop-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notchdrop-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.notchdrop-filename {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.notchdrop-filesize {
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+
+.notchdrop-close-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.notchdrop-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.notchdrop-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.notchdrop-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e5e7eb;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.notchdrop-action-btn:hover {
+  background: rgba(52, 211, 153, 0.2);
+  border-color: rgba(52, 211, 153, 0.5);
+  color: #34d399;
+  transform: translateY(-1px);
+}
+
+.notchdrop-action-btn.primary {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.notchdrop-action-btn.primary:hover {
+  background: #059669;
+}
+
+/* Drag over highlight on island */
+.island-dragover {
+  border: 2px dashed #34d399 !important;
+  box-shadow: 0 0 28px rgba(52, 211, 153, 0.6) !important;
+  transform: scale(1.02) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Focus & Pomodoro Timer Banner */
+.island-focus-timer-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 12px 2px 12px;
+  padding: 6px 12px;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.focus-timer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.focus-timer-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.focus-timer-digits {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #f0f9ff;
+  letter-spacing: 1px;
+}
+
+.focus-timer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.focus-timer-btn {
+  background: #0284c7;
+  border: none;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.focus-timer-btn:hover {
+  background: #0369a1;
+}
+
+.focus-timer-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e0f2fe;
+}
+
+.focus-timer-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.focus-timer-btn.close {
+  background: transparent;
+  color: #94a3b8;
+  padding: 2px 4px;
+}
+
+.focus-timer-btn.close:hover {
+  color: #ffffff;
+}
+
+/* Screen Capture / Vision Button */
+.chat-screen-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-right: 2px;
+}
+
+.chat-screen-btn:hover {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+  transform: scale(1.08);
+}
+
+/* Pet Interactive Petting Bounce */
+@keyframes pet-happy-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.22) rotate(-6deg); }
+  60% { transform: scale(0.95) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.pet-happy-bounce {
+  animation: pet-happy-bounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 
 

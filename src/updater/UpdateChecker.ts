@@ -17,7 +17,7 @@ export interface UpdateInfo {
 }
 
 export class UpdateChecker {
-  public static readonly CURRENT_VERSION = "0.2.3";
+  public static readonly CURRENT_VERSION = "0.2.3.1";
   public static readonly GITHUB_REPO = "HuseynDeveloper/Mintu";
 
   public getCurrentVersion(): string {
