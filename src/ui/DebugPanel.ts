@@ -361,84 +361,11 @@ export class DebugPanel {
         if (this.delegate.onToggleSlotOverlay) {
           this.delegate.onToggleSlotOverlay();
         }
-      } else if (btn.dataset.diag === "mock-download") {
-        import("../ai/ModelManager").then(({ modelManager }) => {
-          modelManager.simulateMockDownload("qwen2.5-0.5b-instruct");
-        });
       } else if (btn.dataset.diag === "clear-cache") {
         localStorage.removeItem("mintu_context_consent");
-        alert("Context consent reset! Next capture will show consent card.");
-      } else if (btn.dataset.diag === "force-ai-msg") {
-        this.delegate.onSetIslandState("expanded");
-        import("../ai/ChatManager").then(({ chatManager }) => {
-          chatManager.sendMessage("Tell me about yourself, Mintu!");
-        });
-      } else if (btn.dataset.toolsim) {
-        const sim = btn.dataset.toolsim;
-        import("../ai/tools/ToolExecutor").then(async ({ toolExecutor }) => {
-          if (sim === "time") {
-            const res = await toolExecutor.executeToolCall("get_time_and_date", {});
-            eventBus.emit("pet:say", { text: res.result.summary });
-          } else if (sim === "clipboard") {
-            const res = await toolExecutor.executeToolCall("read_clipboard_text", {});
-            eventBus.emit("pet:say", { text: res.result.summary });
-          } else if (sim === "search") {
-            const res = await toolExecutor.executeToolCall("search_files", { query: "mintu" });
-            eventBus.emit("pet:say", { text: res.result.summary });
-          } else if (sim === "reminder") {
-            const res = await toolExecutor.executeToolCall("set_reminder", { text: "Drink a cup of mint tea!", in_seconds: 5 });
-            eventBus.emit("pet:say", { text: res.result.summary });
-          } else if (sim === "open-app") {
-            toolExecutor.executeToolCall("open_app", { name: "Calculator" });
-          } else if (sim === "open-url") {
-            toolExecutor.executeToolCall("open_url", { url: "https://github.com" });
-          } else if (sim === "recycle") {
-            toolExecutor.executeToolCall("move_to_recycle_bin", { path: "scratch_test.txt" });
-          } else if (sim === "cloud-consent") {
-            eventBus.emit("island:request-state", "cloud-consent");
-          }
-        });
-      } else if (btn.dataset.m5) {
-        const action = btn.dataset.m5;
-        if (action === "toggle-mock") {
-          import("../ai/ChatManager").then(({ chatManager }) => {
-            chatManager.setDevForceMock(!chatManager.isDevMockActive());
-            this.refreshMilestone5Info();
-          });
-        } else if (action === "test-memory") {
-          import("../ai/MemoryManager").then(async ({ memoryManager }) => {
-            await memoryManager.addMemory("fact", "User prefers concise code examples and clean markdown", "debug_panel");
-            eventBus.emit("pet:say", { text: "Saved test memory: 'User prefers concise code examples'!" });
-            this.refreshMilestone5Info();
-          });
-        } else if (action === "10-chats") {
-          import("../ai/ChatManager").then(async ({ chatManager }) => {
-            const testTitles = [
-              "Rust Async Runtime & Tokio",
-              "Python Data Cleaning with Pandas",
-              "Azerbaijani Poetry and Literature",
-              "Vite Configuration and Rollup Options",
-              "Dynamic Island CSS Micro-interactions",
-              "SQLite FTS5 Full Text Indexing",
-              "Local LLM Benchmarking & VRAM",
-              "Desktop Pet Spring Physics 60fps",
-              "Windows Notification Center Manager",
-              "Milestone 5 QA Verification Suite",
-            ];
-            for (const t of testTitles) {
-              const c = await chatManager.startNewChat();
-              await chatManager.renameConversation(c.id, t);
-              await chatManager.sendMessage(`This is an automated test message for "${t}".`);
-            }
-            eventBus.emit("pet:say", { text: "Created 10 test chats successfully!" });
-            this.refreshMilestone5Info();
-          });
-        } else if (action === "refresh-m5") {
-          this.refreshMilestone5Info();
-        }
       } else if (btn.dataset.forcemood) {
         const mood = btn.dataset.forcemood;
-        import("../ai/MoodManager").then(({ moodManager }) => {
+        import("../pet/MoodManager").then(({ moodManager }) => {
           moodManager.setMood(mood as any, "Forced via developer panel", true);
           this.refreshMilestone5Info();
         });
@@ -611,33 +538,12 @@ export class DebugPanel {
   }
 
   public refreshMilestone5Info(): void {
-    import("../ai/ChatManager").then(({ chatManager }) => {
-      const provEl = this.el.querySelector("#debug-active-provider");
-      if (provEl) {
-        provEl.textContent = `${chatManager.getActiveProviderId()}${chatManager.isDevMockActive() ? " (Forced Mock)" : ""}`;
-      }
-    });
-
-    import("../ai/MoodManager").then(({ moodManager }) => {
+    import("../pet/MoodManager").then(({ moodManager }) => {
       const moodState = moodManager.getMoodState();
       const moodEl = this.el.querySelector("#debug-current-mood");
       const reasonEl = this.el.querySelector("#debug-mood-reason");
       if (moodEl) moodEl.textContent = moodState.mood;
       if (reasonEl) reasonEl.textContent = moodState.reason;
-    });
-
-    import("../ai/MemoryManager").then(({ memoryManager }) => {
-      const memEl = this.el.querySelector("#debug-last-memories");
-      if (memEl) {
-        const last = memoryManager.lastRetrievedMemories;
-        if (!last || last.length === 0) {
-          memEl.textContent = "None retrieved yet";
-        } else {
-          memEl.innerHTML = last
-            .map((item) => `<div>[${(item.score * 100).toFixed(0)}%] ${item.memory.text}</div>`)
-            .join("");
-        }
-      }
     });
   }
 

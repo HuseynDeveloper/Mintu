@@ -60,6 +60,14 @@ export type MintuEventMap = {
   "gamification:xp-gained": { amount: number; reason: string; totalXP: number; level: number; leveledUp: boolean };
   "gamification:stats-updated": any;
   "pet:accessory-changed": string;
+  "pet:ambient-headphones": boolean;
+  "pet:toggle-chase-cursor": boolean;
+  "pet:chase-state-changed": boolean;
+  "pet:drop-star": Record<string, any> | void;
+  "pet:star-caught": { total: number };
+  "pet:typing-pulse": Record<string, any> | void;
+  "pet:name-changed": string;
+  "settings:fullscreen-autohide-changed": boolean;
   "timer:focus-completed": { durationSec: number; label?: string };
   "chat:message-sent": Record<string, any> | void;
   "clipboard:action-suggested": any;

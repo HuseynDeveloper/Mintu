@@ -97,6 +97,9 @@ impl MediaManager {
                             || prev.title != state.title
                             || prev.artist != state.artist
                             || prev.has_session != state.has_session
+                            || prev.duration_ms != state.duration_ms
+                            || (state.has_session
+                                && (prev.position_ms / 1000) != (state.position_ms / 1000))
                     };
 
                     if changed {

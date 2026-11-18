@@ -5,88 +5,84 @@ pub fn start_hotkey_listener(app: AppHandle) {
     {
         std::thread::spawn(move || unsafe {
             use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-                RegisterHotKey, MOD_ALT, MOD_CONTROL, MOD_SHIFT, VK_SPACE,
+                RegisterHotKey, MOD_ALT, MOD_CONTROL, MOD_SHIFT,
             };
             use windows_sys::Win32::UI::WindowsAndMessaging::{
                 GetMessageW, MSG, WM_HOTKEY,
             };
 
-            const HOTKEY_ASK: i32 = 1001;
-            const HOTKEY_CAPTURE: i32 = 1002;
             const HOTKEY_MODE: i32 = 1003;
             const HOTKEY_DEBUG: i32 = 1004;
-            const HOTKEY_TRANSLATE_AREA: i32 = 1005;
-            const HOTKEY_TRANSLATE_SELECTION: i32 = 1006;
             const HOTKEY_NOTE: i32 = 1007;
-            const HOTKEY_TRANSLATE_INSTANT: i32 = 1008;
+            const HOTKEY_SETTINGS: i32 = 1009;
+            const HOTKEY_HUB: i32 = 1010;
+            const HOTKEY_CLIPBOARD: i32 = 1011;
+            const HOTKEY_COLOR: i32 = 1012;
 
             let null_hwnd = std::ptr::null_mut();
 
-            // Ctrl + Shift + Space: Ask Mintu context / Open Chat
-            if RegisterHotKey(null_hwnd, HOTKEY_ASK, MOD_CONTROL | MOD_SHIFT, VK_SPACE as u32) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+Space");
-            }
-            // Ctrl + Alt + S: Screen Region Capture
-            if RegisterHotKey(null_hwnd, HOTKEY_CAPTURE, MOD_CONTROL | MOD_ALT, 0x53) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Alt+S");
-            }
-            // Ctrl + Alt + M: Toggle Island / Free Mode
+            // Ctrl + Alt + M: Toggle Dynamic Island <-> Free Desktop Mode
             if RegisterHotKey(null_hwnd, HOTKEY_MODE, MOD_CONTROL | MOD_ALT, 0x4D) == 0 {
                 let _ = app.emit("hotkey-conflict", "Ctrl+Alt+M");
             }
-            // Ctrl + Shift + D: Developer Panel Toggle
-            if RegisterHotKey(null_hwnd, HOTKEY_DEBUG, MOD_CONTROL | MOD_SHIFT, 0x44) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+D");
+            // Ctrl + Alt + S: Open Mintu Settings directly
+            if RegisterHotKey(null_hwnd, HOTKEY_SETTINGS, MOD_CONTROL | MOD_ALT, 0x53) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Alt+S");
             }
-            // Ctrl + Shift + N: Quick Scratchpad / Memo
+            // Ctrl + Shift + M: Toggle Mintu Pet Hub
+            if RegisterHotKey(null_hwnd, HOTKEY_HUB, MOD_CONTROL | MOD_SHIFT, 0x4D) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+M");
+            }
+            // Ctrl + Shift + N: Quick Local Scratchpad / Note
             if RegisterHotKey(null_hwnd, HOTKEY_NOTE, MOD_CONTROL | MOD_SHIFT, 0x4E) == 0 {
                 let _ = app.emit("hotkey-conflict", "Ctrl+Shift+N");
             }
-            // Ctrl + Shift + T: Instant Translate
-            if RegisterHotKey(null_hwnd, HOTKEY_TRANSLATE_INSTANT, MOD_CONTROL | MOD_SHIFT, 0x54) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+T");
+            // Ctrl + Shift + V: Clipboard History (Last 15)
+            if RegisterHotKey(null_hwnd, HOTKEY_CLIPBOARD, MOD_CONTROL | MOD_SHIFT, 0x56) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+V");
             }
-            // Ctrl + Alt + T: Translate this area (Image E / F flow)
-            if RegisterHotKey(null_hwnd, HOTKEY_TRANSLATE_AREA, MOD_CONTROL | MOD_ALT, 0x54) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Alt+T");
+            // Ctrl + Alt + C: Screen Color Picker (HEX Eyedropper)
+            if RegisterHotKey(null_hwnd, HOTKEY_COLOR, MOD_CONTROL | MOD_ALT, 0x43) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Alt+C");
             }
-            // Ctrl + Alt + Shift + T: Translate selected text
-            if RegisterHotKey(null_hwnd, HOTKEY_TRANSLATE_SELECTION, MOD_CONTROL | MOD_ALT | MOD_SHIFT, 0x54) == 0 {
-                let _ = app.emit("hotkey-conflict", "Ctrl+Alt+Shift+T");
+            // Ctrl + Shift + D: Developer Debug Panel Toggle
+            if RegisterHotKey(null_hwnd, HOTKEY_DEBUG, MOD_CONTROL | MOD_SHIFT, 0x44) == 0 {
+                let _ = app.emit("hotkey-conflict", "Ctrl+Shift+D");
             }
 
             let mut msg: MSG = std::mem::zeroed();
             while GetMessageW(&mut msg, null_hwnd, 0, 0) > 0 {
                 if msg.message == WM_HOTKEY {
                     match msg.wParam as i32 {
-                        HOTKEY_ASK => {
-                            let _ = app.emit("hotkey-triggered", "ask");
-                        }
-                        HOTKEY_CAPTURE => {
-                            let _ = app.emit("hotkey-triggered", "capture");
-                        }
                         HOTKEY_MODE => {
                             let _ = app.emit("hotkey-triggered", "toggle-mode");
                         }
-                        HOTKEY_DEBUG => {
-                            let _ = app.emit("hotkey-triggered", "toggle-debug");
+                        HOTKEY_SETTINGS => {
+                            let _ = app.emit("hotkey-triggered", "open-settings");
                         }
-                        HOTKEY_TRANSLATE_AREA => {
-                            let _ = app.emit("hotkey-triggered", "translate-area");
-                        }
-                        HOTKEY_TRANSLATE_SELECTION => {
-                            let _ = app.emit("hotkey-triggered", "translate-selection");
+                        HOTKEY_HUB => {
+                            let _ = app.emit("hotkey-triggered", "toggle-hub");
                         }
                         HOTKEY_NOTE => {
                             let _ = app.emit("hotkey-triggered", "quick-note");
                         }
-                        HOTKEY_TRANSLATE_INSTANT => {
-                            let _ = app.emit("hotkey-triggered", "instant-translate");
+                        HOTKEY_CLIPBOARD => {
+                            let _ = app.emit("hotkey-triggered", "clipboard-history");
+                        }
+                        HOTKEY_COLOR => {
+                            let _ = app.emit("hotkey-triggered", "color-picker");
+                        }
+                        HOTKEY_DEBUG => {
+                            let _ = app.emit("hotkey-triggered", "toggle-debug");
                         }
                         _ => {}
                     }
                 }
             }
         });
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = app;
     }
 }

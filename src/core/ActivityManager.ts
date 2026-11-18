@@ -14,7 +14,11 @@
 
 export type ActivityType =
   | "urgent_notif"
+  | "volume_hud"
+  | "status_hud"
   | "tool_approval"
+  | "notch_shelf"
+  | "clipboard_drawer"
   | "context_card"
   | "consent_card"
   | "reading"
@@ -40,7 +44,11 @@ export interface ActivityItem {
 
 const ACTIVITY_PRIORITIES: Record<ActivityType, number> = {
   urgent_notif: 100,
+  volume_hud: 92,
+  status_hud: 91,
   tool_approval: 85,
+  notch_shelf: 82,
+  clipboard_drawer: 81,
   context_card: 80,
   consent_card: 80,
   reading: 80,

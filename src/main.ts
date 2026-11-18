@@ -13,7 +13,6 @@ import { IslandController } from "./island/IslandController";
 import { BehaviorScheduler } from "./pet/behavior/BehaviorScheduler";
 import { PhysicsBody } from "./pet/physics/Gravity";
 import { SpeechBubble } from "./ui/SpeechBubble";
-import { FreeChatCard } from "./ui/FreeChatCard";
 import { HitTester } from "./core/HitTester";
 import { appBridge } from "./core/AppBridge";
 import { DebugPanel } from "./ui/DebugPanel";
@@ -21,6 +20,10 @@ import { skinLoader } from "./pet/skins/SkinLoader";
 import { eventBus } from "./core/EventBus";
 import { activityManager } from "./core/ActivityManager";
 import { xpManager } from "./gamification/XPManager";
+import { soundEngine } from "./core/SoundEngine";
+import { wellnessManager } from "./productivity/WellnessManager";
+import { dailyRecapManager } from "./productivity/DailyRecap";
+import { i18n } from "./core/i18n";
 
 export type PetLocation =
   | "inIsland"
@@ -43,7 +46,6 @@ class MintuApp {
   private freePhysics: PhysicsBody;
   private freeBehaviorScheduler: BehaviorScheduler;
   private speechBubble: SpeechBubble;
-  private freeChatCard: FreeChatCard;
 
   // Core Managers
   private hitTester: HitTester;
@@ -68,6 +70,18 @@ class MintuApp {
   private transitionStartPos = { x: 0, y: 0 };
   private transitionStartScale: number = 1.0;
   private hasShownLandingHint: boolean = false;
+
+  // Chase Cursor Mini-Game
+  private isChasingCursor: boolean = false;
+  private chaseTargetPos: { x: number; y: number } | null = null;
+  private chasePollTimer: number | null = null;
+  private chaseCelebrateUntil: number = 0;
+
+  // Catch Falling Star Desktop Toy
+  private starEl: HTMLElement | null = null;
+  private starPos: { x: number; y: number; vy: number; phase: number } | null = null;
+  private fullscreenAutoHide: boolean = true;
+  private isFullscreenActive: boolean = false;
 
   private computeGroundY(areaHeight?: number, scale?: number): number {
     const vh = window.innerHeight;
@@ -102,12 +116,9 @@ class MintuApp {
     freePetEl.style.display = "none"; // Initially hidden inside island
     freeViewport.appendChild(freePetEl);
 
-    // Speech bubble & floating chat card
+    // Speech bubble
     this.speechBubble = new SpeechBubble();
     freeViewport.appendChild(this.speechBubble.el);
-
-    this.freeChatCard = new FreeChatCard();
-    freeViewport.appendChild(this.freeChatCard.el);
 
     // Ground level just above taskbar, strictly bound to current viewport
     const initX = Math.max(100, window.innerWidth - 180);
@@ -250,8 +261,8 @@ class MintuApp {
       this.freeAnimController.setAccessory(initialAccessory as any);
     }
 
-    // Ensure island stays open in expanded chat mode on startup
-    this.islandController.setState("expanded");
+    // Start in clean compact Dynamic Island pill
+    this.islandController.setState("idle");
 
     // ==========================================
     // 6. Start Unified 60fps Animation Loop
@@ -299,7 +310,6 @@ class MintuApp {
 
     this.hitTester.register(el);
     this.hitTester.register(this.speechBubble.el);
-    this.hitTester.register(this.freeChatCard.el);
 
     this.currentMode = "free";
     appBridge.setAppMode("free");
@@ -316,13 +326,14 @@ class MintuApp {
 
     this.freeAnimController.setState("curious", 0.1);
     this.speechBubble.hide();
-    this.freeChatCard.hide();
 
     // Island opens magnetic docking slot
     this.islandController.setDockingReady(true);
   }
 
   private finishEnteringIsland(): void {
+    this.setChaseCursor(false);
+    this.clearFallingStar();
     this.petLocation = "inIsland";
     activityManager.setMintuOutside(false);
 
@@ -331,7 +342,6 @@ class MintuApp {
     el.style.display = "none";
     this.hitTester.unregister(el);
     this.hitTester.unregister(this.speechBubble.el);
-    this.hitTester.unregister(this.freeChatCard.el);
 
     // Island settles with spring overshoot and happy wiggle
     this.islandController.setOutside(false);
@@ -348,8 +358,19 @@ class MintuApp {
   // ==========================================
 
   private setupInteractions(): void {
-    // Double click island to toggle between Island and Free mode
-    this.islandController.el.addEventListener("dblclick", () => {
+    // Double click island to toggle between Island and Free mode (only when in idle/pill, never when expanded or clicking UI)
+    this.islandController.el.addEventListener("dblclick", (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.closest(".slot-expanded") ||
+        target.closest("button") ||
+        target.closest("input") ||
+        target.closest("select") ||
+        target.closest("textarea") ||
+        this.islandController.getState().startsWith("expanded")
+      ) {
+        return;
+      }
       this.toggleMode();
     });
 
@@ -479,12 +500,17 @@ class MintuApp {
         return;
       }
 
-      // Quick click opens Free mode chat card
+      // Quick click gives a cute playful pet reaction & XP (no AI chat!)
       const clickDist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
       const clickDur = performance.now() - this.pointerDownTime;
       if (clickDist < 8 && clickDur < 300) {
-        this.freeChatCard.toggle();
-        this.freeChatCard.updatePosition(this.freePhysics.x, this.freePhysics.y);
+        this.petLocation = "free";
+        this.freeAnimController.setState("happy", 0.15);
+        soundEngine.playCuteChirp("happy");
+        xpManager.addXP(5, "Petted Mintu on desktop");
+        const lines = ["Hehe!", "Yaxşıyam!", "Musiqi aç, rəqs edək!", "İki dəfə bas, adaya qayıdım!"];
+        this.speechBubble.say(lines[Math.floor(Math.random() * lines.length)], 3200);
+        this.speechBubble.updatePosition(this.freePhysics.x, this.freePhysics.y);
         return;
       }
 
@@ -492,10 +518,9 @@ class MintuApp {
       this.petLocation = "free";
     });
 
-    // Speech bubble click opens chat card
+    // Speech bubble click dismisses bubble cleanly
     this.speechBubble.el.addEventListener("click", () => {
-      this.freeChatCard.show();
-      this.freeChatCard.updatePosition(this.freePhysics.x, this.freePhysics.y);
+      this.speechBubble.hide();
     });
 
     // Double-click on free pet jumps back to Island
@@ -599,6 +624,124 @@ class MintuApp {
       this.islandAnimController.setAccessory(acc);
       this.freeAnimController.setAccessory(acc);
     });
+
+    // Ambient focus sound headphones sync
+    eventBus.on("pet:ambient-headphones", (active: boolean) => {
+      const targetAcc = active ? "headphones" : xpManager.getEquippedAccessory();
+      this.islandAnimController.setAccessory(targetAcc as any);
+      this.freeAnimController.setAccessory(targetAcc as any);
+    });
+
+    // Keep Mintu dancing continuously for the entire duration of active music
+    eventBus.on("music:ambient-update", (media: any) => {
+      const playing = Boolean(media && media.is_playing);
+      this.islandBehaviorScheduler.setMusicPlaying(playing);
+      this.freeBehaviorScheduler.setMusicPlaying(playing);
+    });
+
+    // Chase Cursor mini-game toggle
+    eventBus.on("pet:toggle-chase-cursor", (enable: boolean) => {
+      this.setChaseCursor(Boolean(enable));
+    });
+
+    // Drop Falling Star toy on desktop
+    eventBus.on("pet:drop-star", () => {
+      this.spawnFallingStar();
+    });
+
+    // Bongo-Cat Typing Pulse reaction (privacy-safe)
+    appBridge.listenToEvent("typing-pulse", () => {
+      const target = this.petLocation === "inIsland" ? this.islandPetRenderer.container : this.freePetRenderer.container;
+      target.classList.remove("bongo-tap");
+      void target.offsetWidth;
+      target.classList.add("bongo-tap");
+    });
+
+    // Smart Fullscreen Auto-Hide (games / fullscreen videos)
+    this.fullscreenAutoHide = localStorage.getItem("mintu_fullscreen_autohide") !== "off";
+    const applyFullscreenVisibility = () => {
+      const hide = this.fullscreenAutoHide && this.isFullscreenActive;
+      document.body.classList.toggle("fullscreen-hidden", hide);
+    };
+    appBridge.listenToEvent<boolean>("fullscreen-changed", (fs) => {
+      this.isFullscreenActive = Boolean(fs);
+      applyFullscreenVisibility();
+    });
+    eventBus.on("settings:fullscreen-autohide-changed", (enabled: boolean) => {
+      this.fullscreenAutoHide = Boolean(enabled);
+      applyFullscreenVisibility();
+    });
+
+    // Pet say event from Pet Hub (Daily tips, Cookie/Tea messages)
+    eventBus.on("pet:say", (data: { text?: string }) => {
+      if (!data?.text) return;
+      if (this.petLocation !== "inIsland") {
+        this.speechBubble.say(data.text, 4000);
+        this.speechBubble.updatePosition(this.freePhysics.x, this.freePhysics.y);
+      }
+    });
+  }
+
+  private setChaseCursor(enable: boolean): void {
+    if (this.isChasingCursor === enable) return;
+    this.isChasingCursor = enable;
+    eventBus.emit("pet:chase-state-changed", enable);
+
+    if (this.chasePollTimer) {
+      clearInterval(this.chasePollTimer);
+      this.chasePollTimer = null;
+    }
+
+    if (enable) {
+      if (this.petLocation === "inIsland") {
+        this.leaveIsland();
+      }
+      this.freeBehaviorScheduler.setEnabled(false);
+      soundEngine.playCuteChirp("happy");
+      this.speechBubble.say(i18n.t().petHub.chaseStartedMsg, 3000);
+      this.speechBubble.updatePosition(this.freePhysics.x, this.freePhysics.y);
+
+      this.chasePollTimer = window.setInterval(async () => {
+        if (!this.isChasingCursor || this.petLocation !== "free") return;
+        const pos = await appBridge.getCursorPos();
+        if (pos) {
+          this.chaseTargetPos = { x: pos[0], y: pos[1] };
+        }
+      }, 55);
+    } else {
+      this.chaseTargetPos = null;
+      this.freeBehaviorScheduler.setEnabled(true);
+      if (this.petLocation === "free") {
+        this.freeAnimController.setState("idle", 0.2);
+      }
+    }
+  }
+
+  private spawnFallingStar(): void {
+    if (this.petLocation === "inIsland") {
+      this.leaveIsland();
+    }
+    this.clearFallingStar();
+    const freeViewport = document.getElementById("free-viewport");
+    if (!freeViewport) return;
+
+    const star = document.createElement("div");
+    star.className = "mintu-falling-star";
+    star.innerHTML = `<svg width="26" height="26" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fef3c7" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    freeViewport.appendChild(star);
+
+    const startX = Math.max(120, Math.min(window.innerWidth - 120, Math.random() * (window.innerWidth - 240) + 120));
+    this.starEl = star;
+    this.starPos = { x: startX, y: 70, vy: 115, phase: Math.random() * 6.28 };
+    soundEngine.playCuteChirp("click");
+  }
+
+  private clearFallingStar(): void {
+    if (this.starEl) {
+      this.starEl.remove();
+      this.starEl = null;
+    }
+    this.starPos = null;
   }
 
   async setMode(mode: "island" | "free"): Promise<void> {
@@ -696,11 +839,83 @@ class MintuApp {
         this.petLocation = "free";
       }
     } else if (this.petLocation === "free") {
-      this.freeBehaviorScheduler.update();
-      if (this.freeAnimController.getStateName() === "walk") {
-        this.freePhysics.vx = this.freePhysics.walkDirection * 55;
-      } else if (this.freePhysics.isGrounded) {
-        this.freePhysics.vx = 0;
+      if (this.starPos && this.starEl) {
+        // Animate glowing star drifting gently down
+        this.starPos.y += this.starPos.vy * dtSec;
+        this.starPos.phase += dtSec * 3.2;
+        const swayX = this.starPos.x + Math.sin(this.starPos.phase) * 24;
+        this.starEl.style.transform = `translate3d(${swayX.toFixed(1)}px, ${this.starPos.y.toFixed(1)}px, 0) rotate(${(this.starPos.phase * 35).toFixed(0)}deg)`;
+
+        // Mintu sprints toward the falling star and hops to catch it!
+        const sdx = swayX - this.freePhysics.x;
+        const sdy = this.starPos.y - this.freePhysics.y;
+        this.freeAnimController.lookAt(sdx / 120, sdy / 120);
+
+        if (Math.abs(sdx) > 36) {
+          this.freePhysics.walkDirection = sdx >= 0 ? 1 : -1;
+          this.freePhysics.vx = this.freePhysics.walkDirection * 210;
+          if (this.freeAnimController.getStateName() !== "walk") {
+            this.freeAnimController.setState("walk", 0.1);
+          }
+        } else {
+          this.freePhysics.vx = 0;
+          if (sdy < -30 && sdy > -180 && this.freePhysics.isGrounded) {
+            this.freePhysics.vy = -480;
+            this.freePhysics.isGrounded = false;
+          }
+        }
+
+        const catchDist = Math.hypot(sdx, sdy);
+        if (catchDist < 58 || this.starPos.y >= this.freePhysics.y + 45) {
+          this.clearFallingStar();
+          const total = wellnessManager.recordStarCaught();
+          xpManager.addXP(10, "Caught falling star");
+          dailyRecapManager.recordXP(10);
+          eventBus.emit("pet:star-caught", { total });
+          soundEngine.playCuteChirp("level-up");
+          this.freeAnimController.setState("happy", 0.1);
+          if (this.freePhysics.isGrounded) {
+            this.freePhysics.vy = -340;
+            this.freePhysics.isGrounded = false;
+          }
+          this.speechBubble.say(`+10 XP! (${total})`, 2600);
+          this.speechBubble.updatePosition(this.freePhysics.x, this.freePhysics.y);
+        }
+      } else if (this.isChasingCursor && this.chaseTargetPos) {
+        const dx = this.chaseTargetPos.x - this.freePhysics.x;
+        const dy = this.chaseTargetPos.y - this.freePhysics.y;
+        this.freeAnimController.lookAt(dx / 120, dy / 120);
+
+        if (nowSec < this.chaseCelebrateUntil) {
+          this.freePhysics.vx = 0;
+        } else if (Math.abs(dx) > 46) {
+          this.freePhysics.walkDirection = dx >= 0 ? 1 : -1;
+          this.freePhysics.vx = this.freePhysics.walkDirection * 185;
+          if (this.freeAnimController.getStateName() !== "walk") {
+            this.freeAnimController.setState("walk", 0.12);
+          }
+          // Playful little hop if cursor is high up
+          if (dy < -110 && this.freePhysics.isGrounded && Math.random() < 0.03) {
+            this.freePhysics.vy = -440;
+            this.freePhysics.isGrounded = false;
+          }
+        } else {
+          this.freePhysics.vx = 0;
+          this.chaseCelebrateUntil = nowSec + 1.1;
+          this.freeAnimController.setState("happy", 0.12);
+          if (this.freePhysics.isGrounded) {
+            this.freePhysics.vy = -300;
+            this.freePhysics.isGrounded = false;
+          }
+          soundEngine.playCuteChirp("click");
+        }
+      } else {
+        this.freeBehaviorScheduler.update();
+        if (this.freeAnimController.getStateName() === "walk") {
+          this.freePhysics.vx = this.freePhysics.walkDirection * 55;
+        } else if (this.freePhysics.isGrounded) {
+          this.freePhysics.vx = 0;
+        }
       }
       this.freePhysics.update(dtSec);
       const scaleX = this.freePhysics.walkDirection;
@@ -709,11 +924,8 @@ class MintuApp {
       const pose = this.freeAnimController.update(nowSec, dtSec);
       this.freePetRenderer.render(pose);
 
-      // Keep speech bubble & chat card anchored to Mintu
+      // Keep speech bubble anchored to Mintu
       this.speechBubble.updatePosition(this.freePhysics.x, this.freePhysics.y);
-      if (this.freeChatCard.getIsOpen()) {
-        this.freeChatCard.updatePosition(this.freePhysics.x, this.freePhysics.y);
-      }
     } else if (this.petLocation === "dragging" || this.petLocation === "approaching") {
       // Spring lag follower
       const springLag = 0.35;

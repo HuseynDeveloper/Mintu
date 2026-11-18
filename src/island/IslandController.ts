@@ -20,25 +20,21 @@ export interface IslandDimensions {
 
 export const IslandDimensionsPresets: Record<string, IslandDimensions> = {
   collapsed: { width: 126, height: 38, radius: 19 },
-  idle: { width: 172, height: 44, radius: 22 },
-  peek: { width: 184, height: 48, radius: 24 },
-  docking: { width: 180, height: 48, radius: 24 },
+  idle: { width: 194, height: 44, radius: 22 },
+  peek: { width: 208, height: 48, radius: 24 },
+  docking: { width: 184, height: 48, radius: 24 },
   "empty-pill": { width: 88, height: 26, radius: 13 },
   notification: { width: 376, height: 58, radius: 29 },
   "notification-actions": { width: 376, height: 114, radius: 28 },
-  expanded: { width: 390, height: 400, radius: 28 },
-  "expanded-large": { width: 440, height: 440, radius: 26 },
+  expanded: { width: 408, height: 472, radius: 28 },
   timer: { width: 340, height: 54, radius: 27 },
-  music: { width: 348, height: 58, radius: 28 },
-  consent: { width: 380, height: 290, radius: 28 },
-  context: { width: 370, height: 114, radius: 28 },
-  blocked: { width: 320, height: 76, radius: 26 },
-  "answer-ready": { width: 190, height: 44, radius: 22 },
-  reading: { width: 280, height: 48, radius: 24 },
-  translate: { width: 400, height: 260, radius: 28 },
-  "tool-approval": { width: 380, height: 114, radius: 28 },
-  "cloud-consent": { width: 380, height: 260, radius: 28 },
-  memo: { width: 380, height: 260, radius: 26 },
+  music: { width: 356, height: 58, radius: 28 },
+  "music-expanded": { width: 384, height: 184, radius: 28 },
+  volume: { width: 292, height: 48, radius: 24 },
+  hud: { width: 318, height: 50, radius: 25 },
+  shelf: { width: 388, height: 236, radius: 26 },
+  clipboard: { width: 408, height: 282, radius: 26 },
+  memo: { width: 424, height: 272, radius: 26 },
 };
 
 export class IslandController {
@@ -89,18 +85,21 @@ export class IslandController {
     // Esc collapses expanded island or resets to idle
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
+        if (this.currentState === "music-expanded") {
+          this.setState(this.content.getIsMusicPlaying() ? "music" : "idle");
+          return;
+        }
         if (
           this.currentState.startsWith("expanded") ||
+          this.currentState === "shelf" ||
+          this.currentState === "clipboard" ||
+          this.currentState === "memo" ||
+          this.currentState === "volume" ||
+          this.currentState === "hud" ||
           this.currentState === "context" ||
           this.currentState === "notification" ||
-          this.currentState === "translate" ||
-          this.currentState === "reading" ||
-          this.currentState === "tool-approval" ||
-          this.currentState === "cloud-consent"
+          this.currentState === "notification-actions"
         ) {
-          if (this.currentState === "tool-approval") {
-            eventBus.emit("island:tool_approval_dismissed", {});
-          }
           this.content.onRequestCollapse?.();
           this.setState("idle");
         }
@@ -127,7 +126,7 @@ export class IslandController {
     });
 
     this.setupInteractions();
-    this.setState("expanded");
+    this.setState("idle");
   }
 
   private setupInteractions(): void {
@@ -159,7 +158,13 @@ export class IslandController {
         target.closest("input") ||
         target.closest("select") ||
         target.closest("textarea") ||
-        target.closest(".slot-expanded")
+        target.closest(".slot-expanded") ||
+        target.closest(".slot-shelf") ||
+        target.closest(".slot-clipboard") ||
+        target.closest(".slot-music-expanded") ||
+        target.closest(".slot-volume") ||
+        target.closest(".slot-hud") ||
+        target.closest(".slot-memo")
       ) {
         return;
       }
@@ -171,6 +176,8 @@ export class IslandController {
 
       if (this.currentState === "idle" || this.currentState === "peek") {
         this.setState("expanded");
+      } else if (this.currentState === "music") {
+        this.setState("music-expanded");
       } else if (this.currentState === "collapsed") {
         this.setState("idle");
       }
@@ -185,10 +192,23 @@ export class IslandController {
       }
     });
 
-    // Double-click to toggle collapse or return to idle
+    // Double-click to toggle collapse or return to idle (only when in idle/peek, never when expanded)
     this.el.addEventListener("dblclick", (e) => {
       const target = e.target as HTMLElement;
-      if (target.closest("button") || target.closest("input") || target.closest("textarea")) return;
+      if (
+        target.closest(".slot-expanded") ||
+        target.closest(".slot-shelf") ||
+        target.closest(".slot-music-expanded") ||
+        target.closest("button") ||
+        target.closest("input") ||
+        target.closest("select") ||
+        target.closest("textarea") ||
+        this.currentState.startsWith("expanded") ||
+        this.currentState === "shelf" ||
+        this.currentState === "music-expanded"
+      ) {
+        return;
+      }
       if (this.currentState === "idle" || this.currentState === "peek") {
         this.setState("collapsed");
       } else if (this.currentState === "collapsed") {
@@ -217,7 +237,7 @@ export class IslandController {
     // Sync Pet state to Island state
     this.syncPetToIslandState(name);
 
-    if (name.startsWith("expanded")) {
+    if (name.startsWith("expanded") || name === "memo" || name === "shelf" || name === "clipboard") {
       appBridge.focusMainWindow();
     }
 
@@ -278,7 +298,18 @@ export class IslandController {
         this.animController.setState("headphones-focus", 0.3);
         break;
       case "music":
+      case "music-expanded":
         this.animController.setState("dance", 0.3);
+        break;
+      case "volume":
+      case "hud":
+        this.animController.setState("curious", 0.2);
+        break;
+      case "shelf":
+        this.animController.setState("happy", 0.25);
+        break;
+      case "clipboard":
+        this.animController.setState("think", 0.25);
         break;
       case "consent":
         this.animController.setState("curious", 0.3);

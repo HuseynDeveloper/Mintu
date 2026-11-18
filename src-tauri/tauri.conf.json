@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Mintu",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "identifier": "com.mintu.desktop",
   "build": {
     "beforeBuildCommand": "npm run build",
@@ -25,18 +25,20 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* http://localhost:* https:; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://api.github.com https://api.open-meteo.com https://geocoding-api.open-meteo.com; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'"
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "shortDescription": "Cute animated mint-green living desktop companion",
-    "longDescription": "Mintu is an animated desktop companion living in a Dynamic Island with Free mode, local AI chat, SMTC media control, notifications, and context awareness.",
+    "targets": "all",
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "license": null
+    },
+    "shortDescription": "Cute animated mint-green living desktop pet and Dynamic Island",
+    "longDescription": "Mintu is a lightweight animated desktop pet living in a Dynamic Island widget with Free Desktop mode, SMTC music controls, notifications, focus timer, and interactive wardrobe.",
     "copyright": "Copyright 2026 Mintu Contributors (MIT)",
-    "resources": [
-      "binaries/**/*"
-    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

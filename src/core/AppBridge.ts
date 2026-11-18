@@ -229,6 +229,108 @@ class AppBridge {
       return [];
     }
   }
+
+  async getSystemVolume(): Promise<{ percent: number; muted: boolean } | null> {
+    try {
+      return await invoke("get_system_volume");
+    } catch {
+      return null;
+    }
+  }
+
+  async setSystemVolume(percent: number, muted?: boolean): Promise<{ percent: number; muted: boolean } | null> {
+    try {
+      return await invoke("set_system_volume", { percent, muted: muted ?? null });
+    } catch {
+      return null;
+    }
+  }
+
+  async openShelfFile(path: string): Promise<boolean> {
+    try {
+      await invoke("open_shelf_file", { path });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async revealShelfFile(path: string): Promise<boolean> {
+    try {
+      await invoke("reveal_shelf_file", { path });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getCursorPos(): Promise<[number, number] | null> {
+    try {
+      return await invoke("get_cursor_pos");
+    } catch {
+      return null;
+    }
+  }
+
+  async pickCursorColor(): Promise<string | null> {
+    try {
+      return await invoke("pick_cursor_color");
+    } catch {
+      return null;
+    }
+  }
+
+  async setTypingPulseEnabled(enabled: boolean): Promise<void> {
+    try {
+      await invoke("set_typing_pulse_enabled", { enabled });
+    } catch {}
+  }
+
+  async moveToMonitor(monitorIndex: number): Promise<boolean> {
+    try {
+      await invoke("move_to_monitor", { monitorIndex });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getSystemStatusInfo(): Promise<{
+    network_connected: boolean;
+    network_down_kbps: number;
+    network_up_kbps: number;
+    cpu_percent: number;
+    ram_percent: number;
+  } | null> {
+    try {
+      return await invoke("get_system_status_info");
+    } catch {
+      return null;
+    }
+  }
+
+  async createReminder(text: string, dueAt: number): Promise<any> {
+    try {
+      return await invoke("db_create_reminder", { text, dueAt });
+    } catch {
+      return null;
+    }
+  }
+
+  async listReminders(): Promise<Array<{ id: number; text: string; due_time: number; status: string }>> {
+    try {
+      const res = await invoke("db_list_reminders");
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async deleteReminder(id: number): Promise<void> {
+    try {
+      await invoke("db_delete_reminder", { id });
+    } catch {}
+  }
 }
 
 export interface WalkableWindow {

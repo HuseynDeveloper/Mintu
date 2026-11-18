@@ -1,11 +1,8 @@
 import { IslandModule, ModuleContext } from "../types";
-import { modelManager } from "../../ai/ModelManager";
-import { cloudProviderManager } from "../../ai/adapters/CloudProviderManager";
-import { chatManager } from "../../ai/ChatManager";
 import { appBridge } from "../../core/AppBridge.ts";
 import { soundEngine } from "../../core/SoundEngine.ts";
 
-export type StatusWidgetId = "clock" | "battery" | "system_load" | "disk" | "network" | "ai_status";
+export type StatusWidgetId = "clock" | "battery" | "system_load" | "disk" | "network";
 
 export interface BackendSystemStatus {
   battery_percent: number | null;
@@ -44,7 +41,6 @@ export class StatusModule implements IslandModule {
     "system_load",
     "disk",
     "network",
-    "ai_status",
   ]);
 
   private latestStatus: BackendSystemStatus = {
@@ -175,7 +171,7 @@ export class StatusModule implements IslandModule {
   // ==========================================
 
   public getActiveWidgets(): StatusWidgetId[] {
-    const all: StatusWidgetId[] = ["clock", "battery", "system_load", "disk", "network", "ai_status"];
+    const all: StatusWidgetId[] = ["clock", "battery", "system_load", "disk", "network"];
     return all.filter((w) => this.enabledWidgets.has(w));
   }
 
@@ -300,21 +296,6 @@ export class StatusModule implements IslandModule {
           <div style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600;">
             <span style="width: 6px; height: 6px; border-radius: 50%; background: ${isOnline ? '#10B981' : '#ef4444'};"></span>
             <span style="color: #ffffff;">${isOnline ? downStr : 'Offline'}</span>
-          </div>
-        `;
-        break;
-      }
-      case "ai_status": {
-        const cloudProv = cloudProviderManager.getActiveProviderId();
-        const isCloud = cloudProv !== "local";
-        const activeModel = isCloud
-          ? cloudProviderManager.getModel(cloudProv) || "Cloud"
-          : modelManager.getActiveModelId()?.replace("qwen2.5-", "Qwen ") || "Local";
-        const aiState = chatManager.getAiState();
-        contentHtml = `
-          <div style="display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600;">
-            <span style="color: ${isCloud ? '#fbbf24' : '#10B981'};">${activeModel}</span>
-            <span style="color: #71717a; font-size: 10px;">(${aiState})</span>
           </div>
         `;
         break;
@@ -478,7 +459,6 @@ export class StatusModule implements IslandModule {
       { id: "system_load", name: "System Load (CPU & RAM)" },
       { id: "disk", name: "Disk Free Space (System Drive)" },
       { id: "network", name: "Network Status & Speed" },
-      { id: "ai_status", name: "Mintu AI Status & Model" },
     ];
 
     container.innerHTML = `

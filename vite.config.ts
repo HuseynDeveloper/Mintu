@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
 
-// https://vite.dev/config/
 export default defineConfig({
+  base: "./",
   clearScreen: false,
   server: {
     port: 1420,
@@ -15,9 +15,7 @@ export default defineConfig({
     target: "esnext",
     rollupOptions: {
       input: {
-        main: resolve(import.meta.dirname, "index.html"),
-        free: resolve(import.meta.dirname, "free.html"),
-        capture: resolve(import.meta.dirname, "capture.html")
+        main: resolve(import.meta.dirname, "index.html")
       }
     }
   }

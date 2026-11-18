@@ -3726,5 +3726,1158 @@ body {
   animation: pet-happy-bounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* ===================================================
+   PURE MINTU PET HUB (Zero AI Edition)
+   =================================================== */
+.subview-hub {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 14px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.subview-hub.active {
+  display: flex;
+}
+
+.pet-hub-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pet-hub-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pet-hub-card-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+}
+
+.pet-hub-timer-digits {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.pet-hub-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pet-hub-btn {
+  padding: 5px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #f3f4f6;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+
+.pet-hub-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pet-hub-btn.primary {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6ee7b7;
+}
+
+.pet-hub-btn.primary:hover {
+  background: rgba(16, 185, 129, 0.34);
+}
+
+.pet-hub-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pet-hub-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pet-hub-chip:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #ffffff;
+}
+
+.pet-hub-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.pet-hub-action {
+  padding: 8px 6px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f3f4f6;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.pet-hub-action:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.pet-hub-music-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.pet-hub-music-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pet-hub-music-artist {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pet-hub-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pet-hub-stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.pet-hub-stat-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.pet-hub-stat-lbl {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.settings-scroll-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 14px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.settings-section-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.settings-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 11.5px;
+  padding: 4px 8px;
+}
+
+.settings-xp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.settings-xp-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.settings-xp-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
 
 
+
+
+/* ==========================================
+ * Pure Mintu v0.3.0 — Volume HUD, File Shelf,
+ * Now Playing Pro, Pet Care, Ambient Mixer,
+ * 6 Pet Skins & Live Weather Pill
+ * ========================================== */
+
+.mintu-island.state-music-expanded .island-pet,
+.mintu-island.state-shelf .island-pet,
+.mintu-island.state-memo .island-pet {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.75);
+}
+
+.idle-weather-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #a7f3d0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.icon-btn {
+  position: relative;
+}
+
+.top-btn-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #10b981;
+  color: #041510;
+  font-size: 9px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pet Care Meters */
+.care-meters-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.care-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.care-meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.care-meter-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.care-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.28s ease;
+}
+
+.care-meter-fill.energy {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.care-meter-fill.happy {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.care-actions-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.care-btn {
+  text-align: center;
+  padding: 5px 6px;
+}
+
+/* Ambient Focus Sound Mixer */
+.ambient-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ambient-slider {
+  width: 110px;
+  accent-color: #10b981;
+  cursor: pointer;
+}
+
+.ambient-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+}
+
+.ambient-pills .pet-hub-chip {
+  flex: 1;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 10.5px;
+}
+
+.pet-hub-chip.active {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: rgba(52, 211, 153, 0.65);
+  color: #ecfdf5;
+}
+
+.pet-hub-action.active-toggle {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: rgba(52, 211, 153, 0.65);
+  color: #6ee7b7;
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.clickable-card:hover {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* System Volume & Mute Dynamic Island HUD */
+.slot-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 0 46px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.volume-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.volume-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.volume-bar-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.volume-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10b981, #6ee7b7);
+  transition: width 0.12s ease;
+}
+
+.volume-bar-fill.muted {
+  background: #ef4444;
+}
+
+.volume-percent-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f3f4f6;
+  min-width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Now Playing Pro (Music Expanded Slot) */
+.slot-music-expanded {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 14px 16px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  gap: 10px;
+}
+
+.music-pro-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.music-pro-art-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.music-pro-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.music-pro-art-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #059669, #10b981 55%, #065f46);
+}
+
+.music-pro-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.music-pro-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-pro-artist {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-pro-album {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.48);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.music-pro-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.music-pro-time {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+}
+
+.music-pro-time:last-child {
+  text-align: right;
+}
+
+.music-pro-progress-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.music-pro-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10b981, #6ee7b7);
+  transition: width 0.35s linear;
+}
+
+.music-pro-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.music-pro-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f9fafb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.music-pro-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.06);
+}
+
+.music-pro-btn.primary {
+  width: 42px;
+  height: 42px;
+  background: #10b981;
+  border-color: #34d399;
+  color: #03150e;
+}
+
+.music-pro-btn.primary:hover {
+  background: #34d399;
+}
+
+/* Notch File Shelf */
+.slot-shelf {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 14px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  gap: 8px;
+}
+
+.shelf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shelf-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.shelf-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.shelf-hint {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.shelf-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shelf-drop-zone {
+  flex: 1;
+  border-radius: 14px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px;
+  overflow-y: auto;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.shelf-drop-zone.drag-active {
+  border-color: #34d399;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.shelf-empty-state {
+  text-align: center;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 28px 12px;
+  line-height: 1.45;
+}
+
+.shelf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shelf-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.shelf-ext-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+  flex-shrink: 0;
+}
+
+.shelf-file-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shelf-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.shelf-mini-btn {
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+  color: #e5e7eb;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shelf-mini-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.shelf-mini-btn.primary {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+}
+
+.shelf-mini-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.28);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+}
+
+/* 6 Built-in Pet Skins Switcher & Weather Input */
+.settings-card-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.2px;
+}
+
+.skins-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.skin-swatch-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e5e7eb;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.skin-swatch-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.skin-swatch-card.active {
+  border-color: #34d399;
+  background: rgba(16, 185, 129, 0.18);
+  color: #ffffff;
+}
+
+.skin-swatch-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.skin-swatch-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weather-city-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.settings-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 11.5px;
+  padding: 5px 8px;
+  outline: none;
+}
+
+.settings-input:focus {
+  border-color: rgba(52, 211, 153, 0.65);
+}
+
+/* ==========================================
+ * Polished Full-Width Quick Note (slot-memo)
+ * ========================================== */
+.slot-memo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch !important;
+  justify-content: flex-start;
+  padding: 14px 16px 16px 16px !important;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.slot-memo .memo-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.slot-memo .memo-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.slot-memo .memo-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #34d399;
+  letter-spacing: 0.1px;
+}
+
+.slot-memo .memo-char-count {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.48);
+  font-variant-numeric: tabular-nums;
+}
+
+.slot-memo .memo-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.slot-memo .memo-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  color: #f3f4f6;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 11px 13px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.slot-memo .memo-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.36);
+}
+
+.slot-memo .memo-textarea:focus {
+  border-color: rgba(52, 211, 153, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ==========================================
+ * Dark-Mode Native Dropdowns (WebView2 Fix)
+ * ========================================== */
+select,
+.settings-select {
+  color-scheme: dark;
+  background-color: #181a20 !important;
+  color: #f3f4f6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+select option,
+.settings-select option {
+  background-color: #14161b !important;
+  color: #f3f4f6 !important;
+}
+
+select option:checked,
+.settings-select option:checked {
+  background-color: #065f46 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================
+ * Pure Mintu v0.2.4 — 3-Tab Hub, Live HUDs,
+ * Clipboard History, Water, Quick Calc,
+ * Bongo-Cat, Falling Star & Fullscreen Hide
+ * ========================================== */
+
+body.fullscreen-hidden #island-viewport,
+body.fullscreen-hidden #free-viewport {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease;
+}
+
+.mintu-island.state-clipboard .island-pet {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.75);
+}
+
+@keyframes bongoTap {
+  0% { transform: scale(1, 1) translateY(0); }
+  45% { transform: scale(1.06, 0.93) translateY(2px); }
+  100% { transform: scale(1, 1) translateY(0); }
+}
+
+.bongo-tap {
+  animation: bongoTap 0.14s ease-out;
+}
+
+.mintu-falling-star {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+  z-index: 40;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.85));
+}
+
+.idle-net-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #7dd3fc;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 3-Tab Switcher inside Pet Hub */
+.hub-tab-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  padding: 3px;
+  margin: 0 14px 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.hub-tab-btn {
+  padding: 5px 8px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hub-tab-btn:hover {
+  color: #ffffff;
+}
+
+.hub-tab-btn.active {
+  background: rgba(16, 185, 129, 0.26);
+  color: #6ee7b7;
+}
+
+.subview-tools {
+  display: none;
+  flex-direction: column;
+  gap: 9px;
+  padding: 4px 14px 14px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.subview-tools.active {
+  display: flex;
+}
+
+.care-meter-fill.water {
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+}
+
+.pet-hub-stats-bar.four-col {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.quick-calc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 92px;
+  overflow-y: auto;
+}
+
+.mini-list-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11.5px;
+  color: #f3f4f6;
+}
+
+.mini-list-row.done .mini-list-text {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.mini-list-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Universal Live HUD Slot (Brightness, Device, Caps/Num, Color, Greeting) */
+.slot-hud {
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 46px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.hud-body {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+}
+
+.hud-device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.hud-text-main {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.hud-pill-ok {
+  background: rgba(16, 185, 129, 0.24);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.hud-pill-warn {
+  background: rgba(245, 158, 11, 0.24);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.hud-pill-muted {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hud-key-cap {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.hud-color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  flex-shrink: 0;
+}
+
+.volume-bar-fill.brightness {
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+}
+
+/* Clipboard History Drawer */
+.slot-clipboard {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 14px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  gap: 8px;
+}
+
+.pinned-clip {
+  border-color: rgba(52, 211, 153, 0.45) !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+}

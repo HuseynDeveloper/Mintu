@@ -18,6 +18,7 @@ export class BehaviorScheduler {
   // Inactivity timeout: falls asleep after 35 seconds of quiet
   private sleepTimeoutMs: number = 35000;
   private isNotificationActive: boolean = false;
+  private isMusicPlaying: boolean = false;
   private stateBeforeNotification: string | null = null;
   private notificationDismissTimer: any = null;
 
@@ -33,6 +34,21 @@ export class BehaviorScheduler {
 
   setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
+  }
+
+  setMusicPlaying(playing: boolean): void {
+    const wasPlaying = this.isMusicPlaying;
+    this.isMusicPlaying = playing;
+    if (playing) {
+      this.lastActivityTime = Date.now();
+      const cur = this.controller.getStateName();
+      if (cur !== "dragged" && cur !== "alert") {
+        this.controller.setState("dance", 0.25);
+      }
+    } else if (wasPlaying && this.controller.getStateName() === "dance") {
+      this.controller.setState("idle", 0.3);
+      this.scheduleNextDecision(4000);
+    }
   }
 
   /**
@@ -76,7 +92,9 @@ export class BehaviorScheduler {
 
     this.notificationDismissTimer = setTimeout(() => {
       this.notificationDismissTimer = null;
-      if (this.stateBeforeNotification === "sleep") {
+      if (this.isMusicPlaying) {
+        this.controller.setState("dance", 0.25);
+      } else if (this.stateBeforeNotification === "sleep") {
         this.controller.setState("sleep", 0.6);
       } else {
         this.controller.setState("idle");
@@ -108,14 +126,39 @@ export class BehaviorScheduler {
     const now = Date.now();
     const currentState = this.controller.getStateName();
 
+    // 0. While music is playing, keep dancing continuously until track ends/pauses
+    if (this.isMusicPlaying) {
+      this.lastActivityTime = now;
+      if (
+        currentState !== "dance" &&
+        currentState !== "dragged" &&
+        currentState !== "landing" &&
+        currentState !== "alert" &&
+        currentState !== "happy"
+      ) {
+        this.controller.setState("dance", 0.25);
+      }
+      return;
+    }
+
     // 1. Check inactivity sleep
-    if (now - this.lastActivityTime > this.sleepTimeoutMs && currentState !== "sleep" && currentState !== "dragged") {
+    if (
+      now - this.lastActivityTime > this.sleepTimeoutMs &&
+      currentState !== "sleep" &&
+      currentState !== "dragged" &&
+      currentState !== "headphones-focus"
+    ) {
       this.controller.setState("sleep", 0.6);
       return;
     }
 
-    // 2. If asleep or dragged, don't trigger random wanderings
-    if (currentState === "sleep" || currentState === "dragged" || currentState === "wake") {
+    // 2. If asleep, dragged, waking, or focused in headphones, don't trigger random wanderings
+    if (
+      currentState === "sleep" ||
+      currentState === "dragged" ||
+      currentState === "wake" ||
+      currentState === "headphones-focus"
+    ) {
       return;
     }
 
