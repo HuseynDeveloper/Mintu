@@ -33,8 +33,7 @@
     "targets": "all",
     "macOS": {
       "frameworks": [],
-      "minimumSystemVersion": "10.15",
-      "license": null
+      "minimumSystemVersion": "10.15"
     },
     "shortDescription": "Cute animated mint-green living desktop pet and Dynamic Island",
     "longDescription": "Mintu is a lightweight animated desktop pet living in a Dynamic Island widget with Free Desktop mode, SMTC music controls, notifications, focus timer, and interactive wardrobe.",
